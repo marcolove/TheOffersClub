@@ -30,23 +30,32 @@ PHRASES_50 = [
 class Telegram:
     def __init__(self, token, dry_run=False):
         self.token, self.dry = token, dry_run
+        self.last_error = ""
 
     def call(self, method, **data):
+        self.last_error = ""
         if self.dry:
             print(f"  [dry-run] {method} -> {data.get('chat_id')}: "
                   f"{(data.get('caption') or data.get('text') or '')[:90]!r}"
                   f"{' +bottoni' if data.get('reply_markup') else ''}")
             return {"message_id": 0}
         for attempt in range(3):
-            r = requests.post(API.format(token=self.token, method=method), data=data, timeout=30)
-            j = r.json()
+            try:
+                r = requests.post(API.format(token=self.token, method=method), data=data, timeout=30)
+                j = r.json()
+            except Exception as e:                   # rete o risposta non valida: riprova
+                print(f"  [telegram] {method}: {e}")
+                time.sleep(3)
+                continue
             if j.get("ok"):
                 time.sleep(1.2)                       # rispetta i limiti di Telegram
                 return j["result"]
             if j.get("error_code") == 429:            # troppi messaggi: aspetta
                 time.sleep(j.get("parameters", {}).get("retry_after", 5) + 1)
                 continue
-            print(f"  [telegram] errore {method}: {j.get('description')}")
+            self.last_error = j.get("description", "")
+            if "message is not modified" not in self.last_error:
+                print(f"  [telegram] errore {method} su {data.get('chat_id')}: {self.last_error}")
             return None
         return None
 
@@ -65,7 +74,8 @@ class Telegram:
         if message_id:
             res = self.call("editMessageText", chat_id=chat_id, message_id=message_id, text=text,
                             parse_mode="HTML", disable_web_page_preview="true")
-            if res or self.dry:
+            # "message is not modified" = testo identico: va bene, non ricrearlo
+            if res or self.dry or "message is not modified" in self.last_error:
                 return message_id
         res = self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
                         disable_web_page_preview="true")
@@ -120,15 +130,19 @@ def build_markup(o, tag=""):
 
 
 def format_hub_pinned(site_url):
-    lines = [f"📌 <b>Benvenuto in {html.escape(config.BRAND)}!</b>",
-             "Scegli i canali che ti interessano 👇", ""]
+    e = html.escape
+    lines = [f"📌 <b>Benvenuto in {e(config.BRAND)}!</b>"]
+    desc = getattr(config, "HUB_DESCRIPTION", "")
+    if desc:
+        lines += ["", e(desc)]
+    lines += ["", "Scegli i canali che ti interessano 👇", ""]
     for n in config.NICHES.values():
-        lines.append(f"{n['emoji']} {html.escape(n['name'])} → {n['channel']}")
+        lines.append(f"{n['emoji']} {e(n['name'])} → {n['channel']}")
     if config.LAMPO.get("enabled"):
         lines.append(f"⚡ Offerte lampo (solo sconti top) → {config.LAMPO['channel']}")
     if config.TELEGRAM_FOLDER_LINK:
         lines += ["", f"➕ <a href=\"{config.TELEGRAM_FOLDER_LINK}\">Iscriviti a tutti con un clic</a>"]
-    if site_url:
+    if site_url and getattr(config, "SHOW_SITE_IN_PINNED", False):
         lines.append(f"🌐 Sito: {site_url}")
-    lines += ["", f"<i>{html.escape(config.DISCLOSURE)}</i>"]
+    lines += ["", f"<i>{e(config.DISCLOSURE)}</i>"]
     return "\n".join(lines)

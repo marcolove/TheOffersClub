@@ -1,6 +1,6 @@
 """
 CONFIGURAZIONE PRINCIPALE
-Modifica solo questo file per cambiare nomi, canali, nicchie e parole chiave.
+Modifica solo questo file per cambiare nomi, canali, nicchie, orari e parole chiave.
 I dati sensibili (token, chiavi) NON vanno qui: vanno nei Secrets di GitHub.
 """
 
@@ -11,16 +11,29 @@ SITE_DESCRIPTION = ("Offerte Amazon selezionate ogni giorno su tecnologia, casa,
 TELEGRAM_FOLDER_LINK = ""                    # es. "https://t.me/addlist/XXXX" (cartella con tutti i canali)
 WHATSAPP_CHANNEL_LINK = ""                   # es. "https://whatsapp.com/channel/XXXX" (facoltativo)
 
-# Quante offerte al massimo per canale a ogni esecuzione (ogni 2 ore)
-MAX_POSTS_PER_NICHE_PER_RUN = 2
-# Non ripubblicare lo stesso prodotto prima di N giorni
-REPOST_AFTER_DAYS = 10
-# Sconto minimo per finire anche nel canale HUB
-HUB_MIN_DISCOUNT = 40
-# Sconto minimo per finire nel canale LAMPO (se configurato)
-LAMPO_MIN_DISCOUNT = 60
-# Quante offerte tenere in ogni pagina del sito
-SITE_OFFERS_PER_PAGE = 60
+# ------------------------------------------------------------------ Messaggio fissato dell'Hub
+# Breve descrizione mostrata sotto il titolo di benvenuto
+HUB_DESCRIPTION = ("Ogni giorno selezioniamo le offerte più interessanti, divise per categoria. "
+                   "Iscriviti solo ai canali che ti interessano: niente spam, solo sconti utili.")
+SHOW_SITE_IN_PINNED = False                  # True per mostrare il link al sito nel messaggio fissato
+
+# ------------------------------------------------------------------ Orari (ora italiana)
+# Il bot pubblica solo tra MIN_HOUR e MAX_HOUR compresi (es. 8 e 22 = dalle 8:00 alle 22:59).
+# Il sito si aggiorna comunque a ogni giro.
+MIN_HOUR = 8
+MAX_HOUR = 22
+
+# ------------------------------------------------------------------ Quantità e filtri
+MIN_POSTS_PER_NICHE_PER_RUN = 1              # post per nicchia a ogni giro (ogni 2 ore): da...
+MAX_POSTS_PER_NICHE_PER_RUN = 2              # ...a (numero casuale)
+REPOST_AFTER_DAYS = 10                       # non ripubblicare lo stesso prodotto prima di N giorni
+MIN_DISCOUNT = 15                            # sconto minimo % per le offerte con prezzo
+MIN_SAVING_VALUE = 5                         # risparmio minimo in euro (-1 = disattivato)
+HUB_MIN_DISCOUNT = 40                        # sconto minimo per finire anche nel canale HUB
+LAMPO_MIN_DISCOUNT = 60                      # sconto minimo per il canale LAMPO (se attivo)
+PRICE_MAX_AGE_HOURS = 24                     # i prezzi Amazon API non si mostrano sul sito oltre N ore
+PRIME_BUTTON = True                          # bottone "Prova Prime gratis" sotto i post Amazon
+SITE_OFFERS_PER_PAGE = 60                    # offerte per pagina del sito
 
 HUB = {
     "channel": "@theoffersclub_hub",         # canale principale

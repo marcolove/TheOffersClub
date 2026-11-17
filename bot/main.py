@@ -10,6 +10,7 @@ import os
 import random
 import sys
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import config
 from bot import site, sources
@@ -19,14 +20,14 @@ ROOT = os.path.dirname(os.path.dirname(__file__))
 STATE = os.path.join(ROOT, "data", "state.json")
 HISTORY = os.path.join(ROOT, "data", "history.json")
 
-# Impostazioni opzionali: se non le aggiungi a config.py valgono questi valori
-MIN_HOUR = getattr(config, "MIN_HOUR", 8)                       # prima di quest'ora non posta
-MAX_HOUR = getattr(config, "MAX_HOUR", 22)                      # dopo quest'ora non posta
-MIN_POSTS = getattr(config, "MIN_POSTS_PER_NICHE_PER_RUN", 1)   # post per nicchia a ogni giro: da...
-MAX_POSTS = getattr(config, "MAX_POSTS_PER_NICHE_PER_RUN", 2)   # ...a (numero casuale)
-MIN_DISCOUNT = getattr(config, "MIN_DISCOUNT", 15)              # sconto minimo % (offerte con prezzo)
-MIN_SAVING_VALUE = getattr(config, "MIN_SAVING_VALUE", 5)       # risparmio minimo in euro (-1 = disattivo)
-PRICE_MAX_AGE_HOURS = getattr(config, "PRICE_MAX_AGE_HOURS", 24)  # i prezzi Amazon API non si tengono oltre
+# Valori da config.py (con un valore predefinito se la riga manca)
+MIN_HOUR = getattr(config, "MIN_HOUR", 8)
+MAX_HOUR = getattr(config, "MAX_HOUR", 22)
+MIN_POSTS = getattr(config, "MIN_POSTS_PER_NICHE_PER_RUN", 1)
+MAX_POSTS = getattr(config, "MAX_POSTS_PER_NICHE_PER_RUN", 2)
+MIN_DISCOUNT = getattr(config, "MIN_DISCOUNT", 15)
+MIN_SAVING_VALUE = getattr(config, "MIN_SAVING_VALUE", 5)
+PRICE_MAX_AGE_HOURS = getattr(config, "PRICE_MAX_AGE_HOURS", 24)
 
 
 def load(path, default):
@@ -42,9 +43,14 @@ def save(path, obj):
 
 
 def italy_hour():
-    # approssimazione ora italiana (UTC+1 / +2 d'estate)
-    now = datetime.now(timezone.utc)
-    return (now.hour + (2 if 4 <= now.month <= 10 else 1)) % 24
+    """Ora italiana esatta (gestisce ora legale/solare)."""
+    return datetime.now(ZoneInfo("Europe/Rome")).hour
+
+
+def in_active_hours(h):
+    if MIN_HOUR <= MAX_HOUR:
+        return MIN_HOUR <= h <= MAX_HOUR
+    return h >= MIN_HOUR or h <= MAX_HOUR          # fascia a cavallo della mezzanotte (es. 20-2)
 
 
 def good_enough(o):
@@ -72,11 +78,17 @@ def expire_prices(history, now):
 def main():
     dry = "--dry-run" in sys.argv
     site_only = "--site-only" in sys.argv
-    tag = os.getenv("AMAZON_TAG", "")
-    site_url = os.getenv("SITE_URL", "")
-    tg = Telegram(os.getenv("TELEGRAM_TOKEN", ""), dry_run=dry or not os.getenv("TELEGRAM_TOKEN"))
+    tag = os.getenv("AMAZON_TAG", "").strip()
+    site_url = os.getenv("SITE_URL", "").strip()
+    token = os.getenv("TELEGRAM_TOKEN", "").strip()
+    if not token and not dry:
+        print("ATTENZIONE: TELEGRAM_TOKEN mancante, eseguo in modalità prova")
+    if not tag:
+        print("ATTENZIONE: AMAZON_TAG mancante, nessun prodotto Amazon verrà pubblicato")
+    tg = Telegram(token, dry_run=dry or not token)
 
     state = load(STATE, {"posted": {}, "hub_pin_id": None})
+    state.setdefault("posted", {})
     history = load(HISTORY, [])
     now = datetime.now(timezone.utc)
 
@@ -85,8 +97,9 @@ def main():
     state["posted"] = {k: v for k, v in state["posted"].items() if v > cutoff}
 
     if not site_only:
-        if not MIN_HOUR <= italy_hour() <= MAX_HOUR and "--force" not in sys.argv:
-            print(f"Fuori orario ({MIN_HOUR}-{MAX_HOUR}): niente post, aggiorno solo il sito")
+        h = italy_hour()
+        if not in_active_hours(h) and "--force" not in sys.argv:
+            print(f"Ora italiana {h}: fuori fascia ({MIN_HOUR}-{MAX_HOUR}), niente post")
         else:
             offers = [o for o in sources.collect_all(tag) if good_enough(o)]
             random.shuffle(offers)                                    # ordine casuale tra pari merito...
@@ -94,9 +107,10 @@ def main():
             # numero di post casuale per nicchia (più naturale di un numero fisso)
             limit = {n: random.randint(MIN_POSTS, max(MIN_POSTS, MAX_POSTS)) for n in config.NICHES}
             count = {n: 0 for n in config.NICHES}
+            seen_now = set()
             for o in offers:
                 nid = o["niche"]
-                if nid not in config.NICHES or o["key"] in state["posted"]:
+                if nid not in config.NICHES or o["key"] in state["posted"] or o["key"] in seen_now:
                     continue
                 if count[nid] >= limit[nid]:
                     continue
@@ -105,6 +119,7 @@ def main():
                                     build_markup(o, tag))
                 if not res:
                     continue
+                seen_now.add(o["key"])
                 count[nid] += 1
                 state["posted"][o["key"]] = now.isoformat()
                 o["seen"] = now.isoformat()
@@ -118,7 +133,7 @@ def main():
                                   o.get("image"), build_markup(o, tag))
             print(f"Pubblicate: {count}")
 
-        # messaggio fissato dell'hub (aggiornato a ogni giro)
+        # messaggio fissato dell'hub (aggiornato a ogni giro, anche fuori fascia: non notifica)
         state["hub_pin_id"] = tg.upsert_pinned(config.HUB["channel"], format_hub_pinned(site_url),
                                                state.get("hub_pin_id"))
 
