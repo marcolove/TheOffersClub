@@ -1,5 +1,35 @@
 [
  {
+  "key": "amz:B09GVHN99N",
+  "source": "amazon",
+  "niche": "casa",
+  "title": "Alpro Protein 50g bevanda alla soia gusto cioccolato 8x1L",
+  "url": "https://link.amazon/B069pulIU",
+  "image": "",
+  "price": 14.99,
+  "old_price": 19.9,
+  "discount": 25,
+  "note": "Vegetale e ad alto contenuto proteico",
+  "brand": "",
+  "manual_price": true,
+  "seen": "2026-11-17T14:21:37.725586+00:00"
+ },
+ {
+  "key": "amz:B07R4CNDRM",
+  "source": "amazon",
+  "niche": "casa",
+  "title": "American Crew Matte Clay cera per capelli uomo 85g",
+  "url": "https://link.amazon/B03oaMwVv",
+  "image": "",
+  "price": 8.99,
+  "old_price": 12.5,
+  "discount": 28,
+  "note": "Tenuta medio-alta e finish opaco",
+  "brand": "",
+  "manual_price": true,
+  "seen": "2026-11-17T14:21:37.725586+00:00"
+ },
+ {
   "key": "amz:B0F22BB4BV",
   "source": "curated",
   "niche": "casa",
