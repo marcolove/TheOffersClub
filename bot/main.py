@@ -76,8 +76,11 @@ def expire_prices(history, now):
 
 
 def send(tg, chat_id, o, niche, tag, for_hub=False):
+    # Anteprima: "lungo" = pagina amazon.it/dp/... (mostra Amazon.it), "corto" = il link del CSV
+    use_long = getattr(config, "PREVIEW_LINK", "lungo") == "lungo" and o.get("preview_url")
+    preview = o["preview_url"] if use_long else o.get("url", "")
     return tg.post_offer(chat_id, format_offer(o, niche, for_hub=for_hub), o.get("image"),
-                         build_markup(o, tag), preview_url=o.get("url", ""))
+                         build_markup(o, tag), preview_url=preview)
 
 
 def main():

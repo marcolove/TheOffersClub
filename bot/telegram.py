@@ -10,6 +10,7 @@ import config
 
 API = "https://api.telegram.org/bot{token}/{method}"
 
+
 class Telegram:
     def __init__(self, token, dry_run=False):
         self.token, self.dry = token, dry_run
@@ -51,7 +52,7 @@ class Telegram:
                 return res
             print("  [telegram] immagine non accettata: uso l'anteprima del link")
         if preview_url:
-            # anteprima grande sopra il testo (foto presa da Telegram dalla pagina Amazon)
+            # anteprima grande sopra il testo (la foto la prende Telegram dalla pagina)
             lp = {"url": preview_url, "prefer_large_media": True, "show_above_text": True}
             return self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
                              link_preview_options=json.dumps(lp), **extra)
@@ -63,6 +64,7 @@ class Telegram:
         if message_id:
             res = self.call("editMessageText", chat_id=chat_id, message_id=message_id, text=text,
                             parse_mode="HTML", disable_web_page_preview="true")
+            # "message is not modified" = testo identico: va bene, non ricrearlo
             if res or self.dry or "message is not modified" in self.last_error:
                 return message_id
         res = self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
@@ -97,7 +99,7 @@ HOT_EMOJIS = ["🔥", "💣", "🚨", "⚡", "😱", "🤑"]
 PRICE_EMOJIS = ["💰", "💶", "🏷️", "💸"]
 NOTE_EMOJIS = ["✅", "👉", "💡", "⭐", "📌"]
 
-# Frasi di apertura (facoltative, usate a caso circa metà delle volte)
+# Frasi di apertura (usate a caso circa metà delle volte)
 OPENERS = [
     "Occhio a questo 👀", "Da tenere d'occhio", "Segnalazione del giorno", "Per chi lo cercava",
     "Questo merita", "Nuovo arrivo nel club", "Ve lo segnalo", "Scelto per voi",
@@ -107,18 +109,23 @@ OPENERS_HOT = [
     "Non capita spesso", "Offerta top di oggi",
 ]
 
-# Righe prezzo: {p}=prezzo, {o}=prezzo vecchio, {d}=sconto %
+# Righe prezzo: {p}=prezzo, {o}=prezzo vecchio
 PRICE_TEMPLATES = [
     "{e} <b>A {p}</b> invece di <s>{o}</s>",
-    "{e} <b>{p}</b> anziché <s>{o}</s> (-{d}%)",
+    "{e} <b>{p}</b> anziché <s>{o}</s>",
     "{e} Ora a <b>{p}</b>, prima <s>{o}</s>",
-    "{e} <b>{p}</b> <s>{o}</s> · -{d}%",
+    "{e} <b>{p}</b> <s>{o}</s>",
     "{e} Scende a <b>{p}</b> (era <s>{o}</s>)",
 ]
+# Riga sconto + risparmio: compare SEMPRE quando c'è uno sconto. {d}=%, {s}=euro risparmiati
 SAVING_TEMPLATES = [
-    "📉 Risparmi {s}", "📉 {s} in meno", "🤑 Risparmio di {s}", "", "",
+    "📉 <b>-{d}%</b> · risparmi {s}",
+    "🔻 Sconto <b>{d}%</b> · {s} in meno",
+    "🤑 <b>-{d}%</b>, risparmi {s}",
+    "📉 Risparmi {s} (<b>-{d}%</b>)",
 ]
 
+# Frasi di commento (solo offerte con prezzo preso dall'API, non quelle con prezzo a mano)
 PHRASES_BASE = [
     "Prezzo interessante: controlla le recensioni prima di acquistare.",
     "Un buon prezzo per questo prodotto.",
@@ -136,22 +143,43 @@ PHRASES_50 = [
     "Metà prezzo o quasi!", "",
 ]
 
-# Avviso affiliato: sempre presente, cambia solo la forma
+# Avviso affiliato: sempre presente, in una sola riga. {dt} = data del prezzo
 DISCLOSURES = [
     "<i>Link affiliato · prezzo soggetto a variazioni</i>",
     "<i>#affiliato · il prezzo può cambiare</i>",
     "<i>Link affiliato Amazon · verifica il prezzo sulla pagina</i>",
     "<i>#ad link affiliato · prezzi soggetti a variazioni</i>",
 ]
+DISCLOSURES_DATED = [
+    "<i>Prezzo del {dt} · può variare · link affiliato Amazon</i>",
+    "<i>Prezzo del {dt} · #affiliato · verifica sulla pagina</i>",
+    "<i>Prezzo rilevato il {dt} · link affiliato · può cambiare</i>",
+]
+
+LINK_LINES = ["🔎 {u}", "👉 {u}", "🛒 {u}", "🔗 {u}"]
+CTA_BUTTONS = ["🛒 Vedi su {s}", "👉 Vai all'offerta", "🔎 Scopri su {s}", "🛍️ Apri su {s}", "🛒 Vedi l'offerta"]
 
 
 def _pick(lst):
     return random.choice(lst) if lst else ""
 
 
+def short_title(t, n=70):
+    """Titolo breve: l'anteprima mostra già quello completo."""
+    t = t.strip()
+    if len(t) <= n:
+        return t
+    cut = t[:n]
+    for sep in (" - ", " | ", ", ", " – "):
+        i = cut.rfind(sep)
+        if i >= 25:
+            return cut[:i].strip()
+    return cut[:cut.rfind(" ")].strip() if " " in cut else cut
+
+
 def format_offer(o, niche, for_hub=False):
     e = html.escape
-    title = o["title"] if len(o["title"]) < 140 else o["title"][:137] + "…"
+    title = short_title(o["title"])
     d = o.get("discount") or 0
     hot = d >= 35
     nid = next((k for k, v in config.NICHES.items() if v is niche), "")
@@ -160,8 +188,8 @@ def format_offer(o, niche, for_hub=False):
 
     lines = []
     if random.random() < 0.5:                                   # apertura solo a volte
-        lines.append(f"<b>{e(_pick(OPENERS_HOT if hot else OPENERS))}</b>")
-    lines.append(f"{icon} {e(title)}" if random.random() < 0.4 else f"{icon} <b>{e(title)}</b>")
+        lines.append(e(_pick(OPENERS_HOT if hot else OPENERS)))
+    lines.append(f"{icon} <b>{e(title)}</b>")                    # titolo sempre in grassetto
     if o.get("note"):
         lines.append(f"{_pick(NOTE_EMOJIS)} {e(o['note'])}")
     low = o["title"].lower()
@@ -169,34 +197,34 @@ def format_offer(o, niche, for_hub=False):
         lines.append("⚠️ Batteria e caricatore NON inclusi")
 
     if o.get("price"):
+        lines.append("")                                        # aria prima del prezzo
         pe = _pick(PRICE_EMOJIS)
         if o.get("old_price") and o["old_price"] > o["price"]:
-            tpl = _pick(PRICE_TEMPLATES)
-            if not d:
-                tpl = PRICE_TEMPLATES[0]
-            lines.append(tpl.format(e=pe, p=eur(o["price"]), o=eur(o["old_price"]), d=d))
-            sv = _pick(SAVING_TEMPLATES)
-            if sv:
-                lines.append(sv.format(s=eur(o["old_price"] - o["price"])))
+            lines.append(_pick(PRICE_TEMPLATES).format(e=pe, p=eur(o["price"]), o=eur(o["old_price"])))
+            if d:
+                lines.append(_pick(SAVING_TEMPLATES).format(d=d, s=eur(o["old_price"] - o["price"])))
         else:
             lines.append(f"{pe} <b>{eur(o['price'])}</b>")
-        if o.get("manual_price"):
-            lines.append("<i>Prezzo al momento della pubblicazione</i>")
-        else:
+        if not o.get("manual_price"):
             ph = _pick(PHRASES_50 if d >= 50 else PHRASES_35 if d >= 35 else PHRASES_BASE)
             if ph:
                 lines.append(ph)
+
+    if getattr(config, "POST_STYLE", "testo") == "testo":
+        lines += ["", _pick(LINK_LINES).format(u=e(o["url"]))]  # aria prima del link
     if for_hub:
         lines += ["", f"📢 Altre offerte: {channel_link(niche['channel'], niche['name'])}"]
-    if getattr(config, "POST_STYLE", "testo") == "testo":
-        lines.append(_pick(LINK_LINES).format(u=e(o["url"])))
-    lines += ["", _pick(DISCLOSURES)]
+
+    # una sola riga finale: data del prezzo (se manuale) + avviso affiliato
+    if o.get("manual_price") and o.get("price"):
+        if o.get("price_date"):
+            foot = _pick(DISCLOSURES_DATED).format(dt=o["price_date"])
+        else:
+            foot = "<i>Prezzo al momento della pubblicazione · link affiliato</i>"
+    else:
+        foot = _pick(DISCLOSURES)
+    lines += ["", foot]
     return "\n".join(lines)
-
-
-LINK_LINES = ["🔎 {u}", "👉 {u}", "🛒 {u}", "🔗 {u}"]
-
-CTA_BUTTONS = ["🛒 Vedi su {s}", "👉 Vai all'offerta", "🔎 Scopri su {s}", "🛍️ Apri su {s}", "🛒 Vedi l'offerta"]
 
 
 def build_markup(o, tag=""):

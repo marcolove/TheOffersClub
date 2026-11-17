@@ -1,7 +1,7 @@
 """
 Fonti delle offerte.
  - Amazon PA-API (automatica, attiva quando inserisci le chiavi dopo le 3 vendite)
- - Lista prodotti data/prodotti.csv (fase di avvio): immagine automatica + prezzo facoltativo
+ - Lista prodotti data/prodotti.csv (fase di avvio): link, prezzo e data facoltativi
  - eBay Browse API (facoltativa, prezzi reali da subito)
 Ogni fonte restituisce una lista di dict "offerta" con lo stesso formato.
 """
@@ -22,20 +22,13 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 def _offer(**kw):
     base = {"key": "", "source": "", "niche": "", "title": "", "url": "", "image": "",
             "price": None, "old_price": None, "discount": None, "note": "", "brand": "",
-            "manual_price": False}
+            "manual_price": False, "preview_url": "", "price_date": ""}
     base.update(kw)
     return base
 
 
 def amazon_link(asin, tag):
     return f"https://www.amazon.it/dp/{asin}?tag={tag}"
-
-
-def associates_image(asin, tag):
-    """Immagine prodotto dal widget ufficiale Associates (funziona con ASIN + tag)."""
-    return ("https://ws-eu.amazon-adsystem.com/widgets/q?_encoding=UTF8"
-            f"&ASIN={asin}&Format=_SL500_&ID=AsinImage&MarketPlace=IT"
-            f"&ServiceVersion=20070822&WS=1&tag={tag}")
 
 
 # --------------------------------------------------------------------------- Amazon PA-API
@@ -125,22 +118,21 @@ def _date(s):
 
 
 def _link(r, asin, tag):
-    """Usa il link della colonna 'link' (es. amzn.to / link.amazon da SiteStripe) se presente."""
+    """Usa il link della colonna 'link' (es. link.amazon / amzn.to da SiteStripe) se presente."""
     link = (r.get("link") or "").strip()
     return link if link.startswith("http") else amazon_link(asin, tag)
 
 
 def from_curated_csv(tag, per_niche=3):
     """Legge data/prodotti.csv. Colonne:
-       asin, nicchia, titolo                          (obbligatorie)
-       nota, link, prezzo, prezzo_vecchio, data_prezzo, immagine   (facoltative)
+       asin, nicchia, titolo                                    (obbligatorie)
+       nota, link, prezzo, prezzo_vecchio, data_prezzo, immagine (facoltative)
     Il prezzo scritto a mano viene usato SOLO se data_prezzo è recente
     (MANUAL_PRICE_MAX_AGE_DAYS, di default 2 giorni): oltre, il post esce senza prezzo."""
     path = os.path.join(DATA_DIR, "prodotti.csv")
     if not os.path.exists(path) or not tag:
         return []
     max_age = getattr(config, "MANUAL_PRICE_MAX_AGE_DAYS", 2)
-    use_img = getattr(config, "USE_ASSOCIATES_IMAGE", False)
     today = datetime.now()
     rows = list(csv.DictReader(open(path, encoding="utf-8-sig")))
     offers = []
@@ -155,12 +147,13 @@ def from_curated_csv(tag, per_niche=3):
             disc = None
             if fresh and old and old > price:
                 disc = round((1 - price / old) * 100)
-            image = (r.get("immagine") or "").strip() or (associates_image(asin, tag) if use_img else "")
             offers.append(_offer(
                 key=f"amz:{asin}", source="amazon" if fresh else "curated", niche=niche_id,
-                title=(r.get("titolo") or "").strip(), url=_link(r, asin, tag), image=image,
+                title=(r.get("titolo") or "").strip(), url=_link(r, asin, tag),
+                image=(r.get("immagine") or "").strip(),
                 price=price if fresh else None, old_price=old if fresh else None,
-                discount=disc, note=(r.get("nota") or "").strip(), manual_price=fresh))
+                discount=disc, note=(r.get("nota") or "").strip(), manual_price=fresh,
+                preview_url=amazon_link(asin, tag), price_date=d.strftime("%d/%m") if fresh else ""))
     print(f"[csv] {len(offers)} prodotti candidati")
     return offers
 
