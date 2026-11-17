@@ -1,7 +1,7 @@
 """
 Fonti delle offerte.
  - Amazon PA-API (automatica, attiva quando inserisci le chiavi dopo le 3 vendite)
- - Lista prodotti curata data/prodotti.csv (fase di avvio, senza prezzi)
+ - Lista prodotti data/prodotti.csv (fase di avvio): immagine automatica + prezzo facoltativo
  - eBay Browse API (facoltativa, prezzi reali da subito)
 Ogni fonte restituisce una lista di dict "offerta" con lo stesso formato.
 """
@@ -10,6 +10,7 @@ import csv
 import os
 import random
 import time
+from datetime import datetime, timedelta
 
 import requests
 
@@ -20,13 +21,21 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 
 def _offer(**kw):
     base = {"key": "", "source": "", "niche": "", "title": "", "url": "", "image": "",
-            "price": None, "old_price": None, "discount": None, "note": "", "brand": ""}
+            "price": None, "old_price": None, "discount": None, "note": "", "brand": "",
+            "manual_price": False}
     base.update(kw)
     return base
 
 
 def amazon_link(asin, tag):
     return f"https://www.amazon.it/dp/{asin}?tag={tag}"
+
+
+def associates_image(asin, tag):
+    """Immagine prodotto dal widget ufficiale Associates (funziona con ASIN + tag)."""
+    return ("https://ws-eu.amazon-adsystem.com/widgets/q?_encoding=UTF8"
+            f"&ASIN={asin}&Format=_SL500_&ID=AsinImage&MarketPlace=IT"
+            f"&ServiceVersion=20070822&WS=1&tag={tag}")
 
 
 # --------------------------------------------------------------------------- Amazon PA-API
@@ -89,23 +98,63 @@ def _parse_amazon_item(it, niche_id, tag):
                   brand=_g(it, "item_info.by_line_info.brand.display_value") or "")
 
 
-# --------------------------------------------------------------------------- Lista curata (CSV)
+# --------------------------------------------------------------------------- Lista prodotti (CSV)
+def _num(s):
+    """'14,99' / '14.99' / '14,99 €' -> 14.99 (None se vuoto o non valido)."""
+    s = (s or "").replace("€", "").replace(" ", "").strip()
+    if not s:
+        return None
+    if "," in s and "." in s:                      # 1.234,56
+        s = s.replace(".", "").replace(",", ".")
+    else:
+        s = s.replace(",", ".")
+    try:
+        v = float(s)
+        return v if v > 0 else None
+    except ValueError:
+        return None
+
+
+def _date(s):
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+        try:
+            return datetime.strptime((s or "").strip(), fmt)
+        except ValueError:
+            pass
+    return None
+
+
 def from_curated_csv(tag, per_niche=3):
-    """Legge data/prodotti.csv (asin,nicchia,titolo,nota). Nessun prezzo: è conforme
-    alle regole Amazon anche senza API. Ogni esecuzione pesca alcuni prodotti a caso."""
+    """Legge data/prodotti.csv. Colonne:
+       asin, nicchia, titolo, nota                     (obbligatorie)
+       prezzo, prezzo_vecchio, data_prezzo, immagine   (facoltative)
+    Il prezzo scritto a mano viene usato SOLO se data_prezzo è recente
+    (MANUAL_PRICE_MAX_AGE_DAYS, di default 2 giorni): oltre, il post esce senza prezzo."""
     path = os.path.join(DATA_DIR, "prodotti.csv")
     if not os.path.exists(path) or not tag:
         return []
-    rows = list(csv.DictReader(open(path, encoding="utf-8")))
+    max_age = getattr(config, "MANUAL_PRICE_MAX_AGE_DAYS", 2)
+    use_img = getattr(config, "USE_ASSOCIATES_IMAGE", True)
+    today = datetime.now()
+    rows = list(csv.DictReader(open(path, encoding="utf-8-sig")))
     offers = []
     for niche_id in config.NICHES:
-        pool = [r for r in rows if r.get("nicchia", "").strip() == niche_id and r.get("asin")]
+        pool = [r for r in rows if (r.get("nicchia") or "").strip() == niche_id and (r.get("asin") or "").strip()]
         random.shuffle(pool)
         for r in pool[:per_niche * 3]:
             asin = r["asin"].strip()
-            offers.append(_offer(key=f"amz:{asin}", source="curated", niche=niche_id,
-                                 title=r.get("titolo", "").strip(), url=amazon_link(asin, tag),
-                                 note=r.get("nota", "").strip()))
+            price, old = _num(r.get("prezzo")), _num(r.get("prezzo_vecchio"))
+            d = _date(r.get("data_prezzo"))
+            fresh = bool(price and d and today - d <= timedelta(days=max_age))
+            disc = None
+            if fresh and old and old > price:
+                disc = round((1 - price / old) * 100)
+            image = (r.get("immagine") or "").strip() or (associates_image(asin, tag) if use_img else "")
+            offers.append(_offer(
+                key=f"amz:{asin}", source="amazon" if fresh else "curated", niche=niche_id,
+                title=(r.get("titolo") or "").strip(), url=amazon_link(asin, tag), image=image,
+                price=price if fresh else None, old_price=old if fresh else None,
+                discount=disc, note=(r.get("nota") or "").strip(), manual_price=fresh))
     print(f"[csv] {len(offers)} prodotti candidati")
     return offers
 
@@ -165,7 +214,7 @@ def from_ebay():
 
 def collect_all(tag):
     offers = from_amazon_api(tag)
-    if not offers:                       # finché non c'è l'API usa la lista curata
+    if not offers:                       # finché non c'è l'API usa la lista CSV
         offers = from_curated_csv(tag)
     offers += from_ebay()
     return offers
