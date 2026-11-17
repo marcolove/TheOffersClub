@@ -54,8 +54,8 @@ def in_active_hours(h):
 
 
 def good_enough(o):
-    """Filtro di qualità. I prodotti senza prezzo (lista curata) passano sempre."""
-    if not o.get("price"):
+    """Filtro di qualità. I prodotti senza prezzo (lista CSV) e con prezzo manuale passano sempre."""
+    if not o.get("price") or o.get("manual_price"):
         return True
     if (o.get("discount") or 0) < MIN_DISCOUNT:
         return False
@@ -73,6 +73,11 @@ def expire_prices(history, now):
         if o.get("source") == "amazon" and o.get("price") and o.get("seen", "") < limit:
             o["price"] = o["old_price"] = o["discount"] = None
             o["price_expired"] = True
+
+
+def send(tg, chat_id, o, niche, tag, for_hub=False):
+    return tg.post_offer(chat_id, format_offer(o, niche, for_hub=for_hub), o.get("image"),
+                         build_markup(o, tag), preview_url=o.get("url", ""))
 
 
 def main():
@@ -102,9 +107,9 @@ def main():
             print(f"Ora italiana {h}: fuori fascia ({MIN_HOUR}-{MAX_HOUR}), niente post")
         else:
             offers = [o for o in sources.collect_all(tag) if good_enough(o)]
-            random.shuffle(offers)                                    # ordine casuale tra pari merito...
-            offers.sort(key=lambda o: o.get("discount") or 0, reverse=True)   # ...poi sconto più alto prima
-            # numero di post casuale per nicchia (più naturale di un numero fisso)
+            random.shuffle(offers)
+            # prima i prodotti con prezzo/sconto, poi gli altri
+            offers.sort(key=lambda o: (o.get("discount") or 0, o.get("price") is not None), reverse=True)
             limit = {n: random.randint(MIN_POSTS, max(MIN_POSTS, MAX_POSTS)) for n in config.NICHES}
             count = {n: 0 for n in config.NICHES}
             seen_now = set()
@@ -115,9 +120,7 @@ def main():
                 if count[nid] >= limit[nid]:
                     continue
                 niche = config.NICHES[nid]
-                res = tg.post_offer(niche["channel"], format_offer(o, niche), o.get("image"),
-                                    build_markup(o, tag))
-                if not res:
+                if not send(tg, niche["channel"], o, niche, tag):
                     continue
                 seen_now.add(o["key"])
                 count[nid] += 1
@@ -126,20 +129,16 @@ def main():
                 history.insert(0, o)
                 d = o.get("discount") or 0
                 if d >= config.HUB_MIN_DISCOUNT:
-                    tg.post_offer(config.HUB["channel"], format_offer(o, niche, for_hub=True),
-                                  o.get("image"), build_markup(o, tag))
+                    send(tg, config.HUB["channel"], o, niche, tag, for_hub=True)
                 if config.LAMPO.get("enabled") and d >= config.LAMPO_MIN_DISCOUNT:
-                    tg.post_offer(config.LAMPO["channel"], format_offer(o, niche, for_hub=True),
-                                  o.get("image"), build_markup(o, tag))
+                    send(tg, config.LAMPO["channel"], o, niche, tag, for_hub=True)
             print(f"Pubblicate: {count}")
 
-        # messaggio fissato dell'hub (aggiornato a ogni giro, anche fuori fascia: non notifica)
         state["hub_pin_id"] = tg.upsert_pinned(config.HUB["channel"], format_hub_pinned(site_url),
                                                state.get("hub_pin_id"))
 
     expire_prices(history, now)
 
-    # tieni lo storico compatto (max 80 offerte per nicchia, ultime 30 giornate)
     old = (now - timedelta(days=30)).isoformat()
     kept, per = [], {}
     for o in history:

@@ -124,17 +124,23 @@ def _date(s):
     return None
 
 
+def _link(r, asin, tag):
+    """Usa il link della colonna 'link' (es. amzn.to / link.amazon da SiteStripe) se presente."""
+    link = (r.get("link") or "").strip()
+    return link if link.startswith("http") else amazon_link(asin, tag)
+
+
 def from_curated_csv(tag, per_niche=3):
     """Legge data/prodotti.csv. Colonne:
-       asin, nicchia, titolo, nota                     (obbligatorie)
-       prezzo, prezzo_vecchio, data_prezzo, immagine   (facoltative)
+       asin, nicchia, titolo                          (obbligatorie)
+       nota, link, prezzo, prezzo_vecchio, data_prezzo, immagine   (facoltative)
     Il prezzo scritto a mano viene usato SOLO se data_prezzo è recente
     (MANUAL_PRICE_MAX_AGE_DAYS, di default 2 giorni): oltre, il post esce senza prezzo."""
     path = os.path.join(DATA_DIR, "prodotti.csv")
     if not os.path.exists(path) or not tag:
         return []
     max_age = getattr(config, "MANUAL_PRICE_MAX_AGE_DAYS", 2)
-    use_img = getattr(config, "USE_ASSOCIATES_IMAGE", True)
+    use_img = getattr(config, "USE_ASSOCIATES_IMAGE", False)
     today = datetime.now()
     rows = list(csv.DictReader(open(path, encoding="utf-8-sig")))
     offers = []
@@ -152,7 +158,7 @@ def from_curated_csv(tag, per_niche=3):
             image = (r.get("immagine") or "").strip() or (associates_image(asin, tag) if use_img else "")
             offers.append(_offer(
                 key=f"amz:{asin}", source="amazon" if fresh else "curated", niche=niche_id,
-                title=(r.get("titolo") or "").strip(), url=amazon_link(asin, tag), image=image,
+                title=(r.get("titolo") or "").strip(), url=_link(r, asin, tag), image=image,
                 price=price if fresh else None, old_price=old if fresh else None,
                 discount=disc, note=(r.get("nota") or "").strip(), manual_price=fresh))
     print(f"[csv] {len(offers)} prodotti candidati")

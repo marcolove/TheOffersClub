@@ -42,14 +42,19 @@ class Telegram:
             return None
         return None
 
-    def post_offer(self, chat_id, text, image="", markup=None):
+    def post_offer(self, chat_id, text, image="", markup=None, preview_url=""):
         extra = {"reply_markup": json.dumps(markup)} if markup else {}
         if image:
             res = self.call("sendPhoto", chat_id=chat_id, photo=image, caption=text,
                             parse_mode="HTML", **extra)
             if res:
                 return res
-            print("  [telegram] immagine non accettata: pubblico solo il testo")
+            print("  [telegram] immagine non accettata: uso l'anteprima del link")
+        if preview_url:
+            # anteprima grande sopra il testo (foto presa da Telegram dalla pagina Amazon)
+            lp = {"url": preview_url, "prefer_large_media": True, "show_above_text": True}
+            return self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
+                             link_preview_options=json.dumps(lp), **extra)
         return self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
                          disable_web_page_preview="true", **extra)
 
@@ -183,19 +188,25 @@ def format_offer(o, niche, for_hub=False):
                 lines.append(ph)
     if for_hub:
         lines += ["", f"📢 Altre offerte: {channel_link(niche['channel'], niche['name'])}"]
+    if getattr(config, "POST_STYLE", "testo") == "testo":
+        lines.append(_pick(LINK_LINES).format(u=e(o["url"])))
     lines += ["", _pick(DISCLOSURES)]
     return "\n".join(lines)
 
+
+LINK_LINES = ["🔎 {u}", "👉 {u}", "🛒 {u}", "🔗 {u}"]
 
 CTA_BUTTONS = ["🛒 Vedi su {s}", "👉 Vai all'offerta", "🔎 Scopri su {s}", "🛍️ Apri su {s}", "🛒 Vedi l'offerta"]
 
 
 def build_markup(o, tag=""):
-    """Bottoni sotto al post: offerta + prova Prime (solo per prodotti Amazon)."""
+    """Bottoni sotto al post (solo se POST_STYLE = "bottoni")."""
+    if getattr(config, "POST_STYLE", "testo") != "bottoni":
+        return None
     is_amazon = o["source"] in ("amazon", "curated")
     store = "Amazon" if is_amazon else "eBay"
     rows = [[{"text": random.choice(CTA_BUTTONS).format(s=store), "url": o["url"]}]]
-    if is_amazon and tag and getattr(config, "PRIME_BUTTON", True):
+    if is_amazon and tag and getattr(config, "PRIME_BUTTON", False):
         rows.append([{"text": "👑 Prova Prime gratis", "url": f"https://www.amazon.it/provaprime?tag={tag}"}])
     return {"inline_keyboard": rows}
 
