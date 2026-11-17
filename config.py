@@ -4,11 +4,11 @@ Modifica solo questo file per cambiare nomi, canali, nicchie e parole chiave.
 I dati sensibili (token, chiavi) NON vanno qui: vanno nei Secrets di GitHub.
 """
 
-BRAND = "OfferteSmart"                       # nome del brand (usato su sito e post)
-SITE_TITLE = "OfferteSmart – Le migliori offerte del giorno"
+BRAND = "TheOffersClub"                      # nome del brand (usato su sito e post)
+SITE_TITLE = "TheOffersClub – Le migliori offerte del giorno"
 SITE_DESCRIPTION = ("Offerte Amazon selezionate ogni giorno su tecnologia, casa, "
                     "utensili e fai da te. Iscriviti ai canali Telegram gratuiti.")
-TELEGRAM_FOLDER_LINK = ""                    # es. "https://t.me/addlist/XXXX" (passo 2.6 del README)
+TELEGRAM_FOLDER_LINK = ""                    # es. "https://t.me/addlist/XXXX" (cartella con tutti i canali)
 WHATSAPP_CHANNEL_LINK = ""                   # es. "https://whatsapp.com/channel/XXXX" (facoltativo)
 
 # Quante offerte al massimo per canale a ogni esecuzione (ogni 2 ore)
@@ -23,13 +23,13 @@ LAMPO_MIN_DISCOUNT = 60
 SITE_OFFERS_PER_PAGE = 60
 
 HUB = {
-    "channel": "@OfferteSmartIT",            # <-- il tuo canale principale
-    "name": "Hub OfferteSmart",
+    "channel": "@theoffersclub_hub",         # canale principale
+    "name": "Hub TheOffersClub",
 }
 
 LAMPO = {
     "enabled": False,                        # metti True quando apri il canale
-    "channel": "@OfferteSmartLampo",
+    "channel": "@theoffersclub_lampo",
 }
 
 # Le nicchie: una = un canale Telegram + una pagina del sito
@@ -37,7 +37,7 @@ NICHES = {
     "tech": {
         "name": "Tech & Gaming",
         "emoji": "💻",
-        "channel": "@OfferteSmartTech",
+        "channel": "@TheOffersClub_Tech",
         "slug": "offerte-tecnologia",
         "seo_title": "Offerte tecnologia e gaming di oggi",
         "seo_intro": "Le migliori offerte del giorno su PC, monitor, SSD, cuffie, smartphone e console, aggiornate automaticamente più volte al giorno.",
@@ -49,7 +49,7 @@ NICHES = {
     "casa": {
         "name": "Casa & Cucina",
         "emoji": "🏠",
-        "channel": "@OfferteSmartCasa",
+        "channel": "@theoffersclub_home",
         "slug": "offerte-casa-cucina",
         "seo_title": "Offerte casa e cucina di oggi",
         "seo_intro": "Friggitrici ad aria, robot aspirapolvere, macchine da caffè e tutto per la casa in sconto, selezionati ogni giorno.",
@@ -61,7 +61,7 @@ NICHES = {
     "utensili": {
         "name": "Utensili & Fai da te",
         "emoji": "🔧",
-        "channel": "@OfferteSmartUtensili",
+        "channel": "@theoffersclub_tools",
         "slug": "offerte-utensili-fai-da-te",
         "seo_title": "Offerte utensili e fai da te di oggi",
         "seo_intro": "Avvitatori, trapani, smerigliatrici, set di attrezzi e giardinaggio di Bosch, Makita, Einhell, DeWalt e altri marchi, in sconto oggi.",
@@ -73,7 +73,7 @@ NICHES = {
     },
     # Esempio di nicchia da attivare più avanti: togli il commento
     # "bimbi": {
-    #     "name": "Bimbi & Giocattoli", "emoji": "🧸", "channel": "@OfferteSmartBimbi",
+    #     "name": "Bimbi & Giocattoli", "emoji": "🧸", "channel": "@theoffersclub_kids",
     #     "slug": "offerte-giocattoli-bambini", "seo_title": "Offerte giocattoli e bambini di oggi",
     #     "seo_intro": "LEGO, giochi, pannolini e articoli per l'infanzia in sconto.",
     #     "amazon_search_index": "Toys", "keywords": ["lego", "pannolini", "gioco da tavolo"],
