@@ -90,6 +90,12 @@ def eur(x):
     return f"{x:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def channel_link(channel, label):
+    """Testo cliccabile verso il canale: si vede il nome (label), non lo @username."""
+    username = channel.lstrip("@")
+    return f'<a href="https://t.me/{html.escape(username)}">{html.escape(label)}</a>'
+
+
 def format_offer(o, niche, for_hub=False):
     e = html.escape
     title = o["title"] if len(o["title"]) < 140 else o["title"][:137] + "…"
@@ -114,7 +120,7 @@ def format_offer(o, niche, for_hub=False):
     if niche.get("name", "").startswith("Utensili") and any(h in low for h in config.NO_BATTERY_HINTS):
         lines.append("⚠️ Batteria e caricatore NON inclusi")
     if for_hub:
-        lines += ["", f"📢 Altre offerte {e(niche['name'])}: {niche['channel']}"]
+        lines += ["", f"📢 Altre offerte: {channel_link(niche['channel'], niche['name'])}"]
     lines += ["", "<i>Link affiliato · prezzo soggetto a variazioni</i>"]
     return "\n".join(lines)
 
@@ -137,9 +143,10 @@ def format_hub_pinned(site_url):
         lines += ["", e(desc)]
     lines += ["", "Scegli i canali che ti interessano 👇", ""]
     for n in config.NICHES.values():
-        lines.append(f"{n['emoji']} {e(n['name'])} → {n['channel']}")
+        # il nome del canale è il link: niente @username in minuscolo a vista
+        lines.append(f"{n['emoji']} {channel_link(n['channel'], n['name'])}")
     if config.LAMPO.get("enabled"):
-        lines.append(f"⚡ Offerte lampo (solo sconti top) → {config.LAMPO['channel']}")
+        lines.append(f"⚡ {channel_link(config.LAMPO['channel'], 'Offerte lampo')} (solo sconti top)")
     if config.TELEGRAM_FOLDER_LINK:
         lines += ["", f"➕ <a href=\"{config.TELEGRAM_FOLDER_LINK}\">Iscriviti a tutti con un clic</a>"]
     if site_url and getattr(config, "SHOW_SITE_IN_PINNED", False):
