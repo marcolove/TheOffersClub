@@ -46,8 +46,10 @@ def from_amazon_api(tag):
     for niche_id, niche in config.NICHES.items():
         for kw in random.sample(niche["keywords"], k=min(3, len(niche["keywords"]))):
             try:
+                # Nessun filtro di sconto lato Amazon: a volte scarta offerte valide.
+                # Lo sconto minimo si applica dopo, in main.py.
                 res = api.search_items(keywords=kw, search_index=niche.get("amazon_search_index", "All"),
-                                       item_count=10, min_saving_percent=15)
+                                       item_count=10)
                 items = getattr(res, "items", None) or []
             except Exception as e:                      # nessun risultato o limite superato
                 print(f"[amazon-api] {niche_id}/{kw}: {e}")
@@ -147,7 +149,7 @@ def from_ebay():
             for it in r.json().get("itemSummaries", []):
                 mp = it.get("marketingPrice") or {}
                 disc = mp.get("discountPercentage")
-                if not disc or int(float(disc)) < 15:
+                if not disc:
                     continue
                 url = it.get("itemAffiliateWebUrl") or it.get("itemWebUrl")
                 offers.append(_offer(

@@ -57,6 +57,8 @@ def card(o):
     seen = o.get("seen", "")[:16].replace("T", " ")
     note = f'<p class="n">{e(o["note"])}</p>' if o.get("note") else ""
     stamp = f'<p class="t">Prezzo rilevato il {seen} UTC, può essere cambiato</p>' if price else ""
+    if o.get("price_expired"):          # prezzo Amazon API più vecchio di 24 ore: non si mostra
+        stamp = '<p class="t">Controlla il prezzo aggiornato su Amazon</p>'
     return (f'<article class="card">{img}<h3>{e(o["title"][:120])}</h3>{note}<p>{price}</p>{stamp}'
             f'<a class="btn" rel="sponsored nofollow" href="{e(o["url"])}">Vedi offerta</a></article>')
 

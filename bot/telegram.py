@@ -1,6 +1,7 @@
 """Invio messaggi ai canali Telegram tramite Bot API."""
 import html
-import os
+import json
+import random
 import time
 
 import requests
@@ -8,6 +9,22 @@ import requests
 import config
 
 API = "https://api.telegram.org/bot{token}/{method}"
+
+# Frasi brevi per rendere i post meno uniformi. Nessuna promessa non verificabile
+# (niente "minimo storico", niente "scorte in esaurimento").
+PHRASES_BASE = [
+    "Prezzo interessante: controlla le recensioni prima di acquistare.",
+    "Un buon prezzo per questo prodotto.",
+    "Vale un'occhiata se lo stavi cercando.",
+]
+PHRASES_35 = [
+    "Sconto importante: da guardare.",
+    "Ribasso notevole rispetto al prezzo di listino.",
+]
+PHRASES_50 = [
+    "Sconto molto alto: da guardare subito.",
+    "Ribasso davvero forte, controlla i dettagli.",
+]
 
 
 class Telegram:
@@ -17,7 +34,8 @@ class Telegram:
     def call(self, method, **data):
         if self.dry:
             print(f"  [dry-run] {method} -> {data.get('chat_id')}: "
-                  f"{(data.get('caption') or data.get('text') or '')[:90]!r}")
+                  f"{(data.get('caption') or data.get('text') or '')[:90]!r}"
+                  f"{' +bottoni' if data.get('reply_markup') else ''}")
             return {"message_id": 0}
         for attempt in range(3):
             r = requests.post(API.format(token=self.token, method=method), data=data, timeout=30)
@@ -32,13 +50,15 @@ class Telegram:
             return None
         return None
 
-    def post_offer(self, chat_id, text, image=""):
+    def post_offer(self, chat_id, text, image="", markup=None):
+        extra = {"reply_markup": json.dumps(markup)} if markup else {}
         if image:
-            res = self.call("sendPhoto", chat_id=chat_id, photo=image, caption=text, parse_mode="HTML")
+            res = self.call("sendPhoto", chat_id=chat_id, photo=image, caption=text,
+                            parse_mode="HTML", **extra)
             if res:
                 return res
         return self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
-                         disable_web_page_preview="false")
+                         disable_web_page_preview="true", **extra)
 
     def upsert_pinned(self, chat_id, text, message_id=None):
         """Aggiorna il messaggio fissato dell'hub; se non esiste lo crea e lo fissa."""
@@ -63,25 +83,40 @@ def eur(x):
 def format_offer(o, niche, for_hub=False):
     e = html.escape
     title = o["title"] if len(o["title"]) < 140 else o["title"][:137] + "…"
-    lines = [f"{niche['emoji']} <b>{e(title)}</b>", ""]
+    d = o.get("discount") or 0
+    icon = "🔥" if d >= 50 else "💣" if d >= 35 else niche["emoji"]
+    lines = [f"{icon} <b>{e(title)}</b>", ""]
     if o.get("price"):
-        p = f"💰 <b>{eur(o['price'])}</b>"
+        p = f"💶 <b>{eur(o['price'])}</b>"
         if o.get("old_price") and o["old_price"] > o["price"]:
-            p += f"  <s>{eur(o['old_price'])}</s>"
-        if o.get("discount"):
-            p += f"  🔻 -{o['discount']}%"
-        lines.append(p)
+            p += f" invece di <s>{eur(o['old_price'])}</s>"
+            if d:
+                p += f" <b>(-{d}%)</b>"
+            lines.append(p)
+            lines.append(f"📉 Risparmi {eur(o['old_price'] - o['price'])}")
+        else:
+            lines.append(p)
+        pool = PHRASES_50 if d >= 50 else PHRASES_35 if d >= 35 else PHRASES_BASE
+        lines += ["", random.choice(pool)]
     if o.get("note"):
         lines.append(f"✅ {e(o['note'])}")
     low = o["title"].lower()
     if niche.get("name", "").startswith("Utensili") and any(h in low for h in config.NO_BATTERY_HINTS):
         lines.append("⚠️ Batteria e caricatore NON inclusi")
-    store = "Amazon" if o["source"] in ("amazon", "curated") else "eBay"
-    lines += ["", f"👉 <a href=\"{e(o['url'])}\">Vedi l'offerta su {store}</a>"]
     if for_hub:
-        lines.append(f"📢 Altre offerte {e(niche['name'])}: {niche['channel']}")
+        lines += ["", f"📢 Altre offerte {e(niche['name'])}: {niche['channel']}"]
     lines += ["", "<i>Link affiliato · prezzo soggetto a variazioni</i>"]
     return "\n".join(lines)
+
+
+def build_markup(o, tag=""):
+    """Bottoni sotto al post: offerta + prova Prime (solo per prodotti Amazon)."""
+    is_amazon = o["source"] in ("amazon", "curated")
+    store = "Amazon" if is_amazon else "eBay"
+    rows = [[{"text": f"🛒 Vedi su {store}", "url": o["url"]}]]
+    if is_amazon and tag and getattr(config, "PRIME_BUTTON", True):
+        rows.append([{"text": "👑 Prova Prime gratis", "url": f"https://www.amazon.it/provaprime?tag={tag}"}])
+    return {"inline_keyboard": rows}
 
 
 def format_hub_pinned(site_url):
