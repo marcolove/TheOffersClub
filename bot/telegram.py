@@ -10,23 +10,6 @@ import config
 
 API = "https://api.telegram.org/bot{token}/{method}"
 
-# Frasi brevi per rendere i post meno uniformi. Nessuna promessa non verificabile
-# (niente "minimo storico", niente "scorte in esaurimento").
-PHRASES_BASE = [
-    "Prezzo interessante: controlla le recensioni prima di acquistare.",
-    "Un buon prezzo per questo prodotto.",
-    "Vale un'occhiata se lo stavi cercando.",
-]
-PHRASES_35 = [
-    "Sconto importante: da guardare.",
-    "Ribasso notevole rispetto al prezzo di listino.",
-]
-PHRASES_50 = [
-    "Sconto molto alto: da guardare subito.",
-    "Ribasso davvero forte, controlla i dettagli.",
-]
-
-
 class Telegram:
     def __init__(self, token, dry_run=False):
         self.token, self.dry = token, dry_run
@@ -66,6 +49,7 @@ class Telegram:
                             parse_mode="HTML", **extra)
             if res:
                 return res
+            print("  [telegram] immagine non accettata: pubblico solo il testo")
         return self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
                          disable_web_page_preview="true", **extra)
 
@@ -74,7 +58,6 @@ class Telegram:
         if message_id:
             res = self.call("editMessageText", chat_id=chat_id, message_id=message_id, text=text,
                             parse_mode="HTML", disable_web_page_preview="true")
-            # "message is not modified" = testo identico: va bene, non ricrearlo
             if res or self.dry or "message is not modified" in self.last_error:
                 return message_id
         res = self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
@@ -96,40 +79,122 @@ def channel_link(channel, label):
     return f'<a href="https://t.me/{html.escape(username)}">{html.escape(label)}</a>'
 
 
+# ------------------------------------------------------------------ Varietà dei post
+# Emoji a tema per nicchia (chiave = id nicchia in config.NICHES). Si possono
+# sovrascrivere aggiungendo "emojis": [...] alla nicchia in config.py.
+THEME_EMOJIS = {
+    "tech": ["💻", "🎮", "🎧", "🖥️", "📱", "⌨️", "🖱️", "🔌", "📡", "🕹️"],
+    "casa": ["🏠", "🛋️", "🍳", "🧺", "🧼", "☕", "🍽️", "🧽", "🪴", "🛁"],
+    "utensili": ["🔧", "🔨", "🪛", "🧰", "⚙️", "🪚", "🔩", "🛠️", "🏗️", "🪜"],
+    "bimbi": ["🧸", "🎲", "🧩", "🎈", "🪀", "🚂", "🎨"],
+}
+HOT_EMOJIS = ["🔥", "💣", "🚨", "⚡", "😱", "🤑"]
+PRICE_EMOJIS = ["💰", "💶", "🏷️", "💸"]
+NOTE_EMOJIS = ["✅", "👉", "💡", "⭐", "📌"]
+
+# Frasi di apertura (facoltative, usate a caso circa metà delle volte)
+OPENERS = [
+    "Occhio a questo 👀", "Da tenere d'occhio", "Segnalazione del giorno", "Per chi lo cercava",
+    "Questo merita", "Nuovo arrivo nel club", "Ve lo segnalo", "Scelto per voi",
+]
+OPENERS_HOT = [
+    "Sconto pazzesco!", "Questo vola via", "Prezzo da non perdere", "Ribasso forte!",
+    "Non capita spesso", "Offerta top di oggi",
+]
+
+# Righe prezzo: {p}=prezzo, {o}=prezzo vecchio, {d}=sconto %
+PRICE_TEMPLATES = [
+    "{e} <b>A {p}</b> invece di <s>{o}</s>",
+    "{e} <b>{p}</b> anziché <s>{o}</s> (-{d}%)",
+    "{e} Ora a <b>{p}</b>, prima <s>{o}</s>",
+    "{e} <b>{p}</b> <s>{o}</s> · -{d}%",
+    "{e} Scende a <b>{p}</b> (era <s>{o}</s>)",
+]
+SAVING_TEMPLATES = [
+    "📉 Risparmi {s}", "📉 {s} in meno", "🤑 Risparmio di {s}", "", "",
+]
+
+PHRASES_BASE = [
+    "Prezzo interessante: controlla le recensioni prima di acquistare.",
+    "Un buon prezzo per questo prodotto.",
+    "Vale un'occhiata se lo stavi cercando.",
+    "", "",
+]
+PHRASES_35 = [
+    "Sconto importante: da guardare.",
+    "Ribasso notevole rispetto al prezzo di listino.",
+    "Bel taglio di prezzo.", "",
+]
+PHRASES_50 = [
+    "Sconto molto alto: da guardare subito.",
+    "Ribasso davvero forte, controlla i dettagli.",
+    "Metà prezzo o quasi!", "",
+]
+
+# Avviso affiliato: sempre presente, cambia solo la forma
+DISCLOSURES = [
+    "<i>Link affiliato · prezzo soggetto a variazioni</i>",
+    "<i>#affiliato · il prezzo può cambiare</i>",
+    "<i>Link affiliato Amazon · verifica il prezzo sulla pagina</i>",
+    "<i>#ad link affiliato · prezzi soggetti a variazioni</i>",
+]
+
+
+def _pick(lst):
+    return random.choice(lst) if lst else ""
+
+
 def format_offer(o, niche, for_hub=False):
     e = html.escape
     title = o["title"] if len(o["title"]) < 140 else o["title"][:137] + "…"
     d = o.get("discount") or 0
-    icon = "🔥" if d >= 50 else "💣" if d >= 35 else niche["emoji"]
-    lines = [f"{icon} <b>{e(title)}</b>", ""]
-    if o.get("price"):
-        p = f"💶 <b>{eur(o['price'])}</b>"
-        if o.get("old_price") and o["old_price"] > o["price"]:
-            p += f" invece di <s>{eur(o['old_price'])}</s>"
-            if d:
-                p += f" <b>(-{d}%)</b>"
-            lines.append(p)
-            lines.append(f"📉 Risparmi {eur(o['old_price'] - o['price'])}")
-        else:
-            lines.append(p)
-        pool = PHRASES_50 if d >= 50 else PHRASES_35 if d >= 35 else PHRASES_BASE
-        lines += ["", random.choice(pool)]
+    hot = d >= 35
+    nid = next((k for k, v in config.NICHES.items() if v is niche), "")
+    theme = niche.get("emojis") or THEME_EMOJIS.get(nid) or [niche.get("emoji", "🛒")]
+    icon = _pick(HOT_EMOJIS) if hot and random.random() < 0.7 else _pick(theme)
+
+    lines = []
+    if random.random() < 0.5:                                   # apertura solo a volte
+        lines.append(f"<b>{e(_pick(OPENERS_HOT if hot else OPENERS))}</b>")
+    lines.append(f"{icon} {e(title)}" if random.random() < 0.4 else f"{icon} <b>{e(title)}</b>")
     if o.get("note"):
-        lines.append(f"✅ {e(o['note'])}")
+        lines.append(f"{_pick(NOTE_EMOJIS)} {e(o['note'])}")
     low = o["title"].lower()
     if niche.get("name", "").startswith("Utensili") and any(h in low for h in config.NO_BATTERY_HINTS):
         lines.append("⚠️ Batteria e caricatore NON inclusi")
+
+    if o.get("price"):
+        pe = _pick(PRICE_EMOJIS)
+        if o.get("old_price") and o["old_price"] > o["price"]:
+            tpl = _pick(PRICE_TEMPLATES)
+            if not d:
+                tpl = PRICE_TEMPLATES[0]
+            lines.append(tpl.format(e=pe, p=eur(o["price"]), o=eur(o["old_price"]), d=d))
+            sv = _pick(SAVING_TEMPLATES)
+            if sv:
+                lines.append(sv.format(s=eur(o["old_price"] - o["price"])))
+        else:
+            lines.append(f"{pe} <b>{eur(o['price'])}</b>")
+        if o.get("manual_price"):
+            lines.append("<i>Prezzo al momento della pubblicazione</i>")
+        else:
+            ph = _pick(PHRASES_50 if d >= 50 else PHRASES_35 if d >= 35 else PHRASES_BASE)
+            if ph:
+                lines.append(ph)
     if for_hub:
         lines += ["", f"📢 Altre offerte: {channel_link(niche['channel'], niche['name'])}"]
-    lines += ["", "<i>Link affiliato · prezzo soggetto a variazioni</i>"]
+    lines += ["", _pick(DISCLOSURES)]
     return "\n".join(lines)
+
+
+CTA_BUTTONS = ["🛒 Vedi su {s}", "👉 Vai all'offerta", "🔎 Scopri su {s}", "🛍️ Apri su {s}", "🛒 Vedi l'offerta"]
 
 
 def build_markup(o, tag=""):
     """Bottoni sotto al post: offerta + prova Prime (solo per prodotti Amazon)."""
     is_amazon = o["source"] in ("amazon", "curated")
     store = "Amazon" if is_amazon else "eBay"
-    rows = [[{"text": f"🛒 Vedi su {store}", "url": o["url"]}]]
+    rows = [[{"text": random.choice(CTA_BUTTONS).format(s=store), "url": o["url"]}]]
     if is_amazon and tag and getattr(config, "PRIME_BUTTON", True):
         rows.append([{"text": "👑 Prova Prime gratis", "url": f"https://www.amazon.it/provaprime?tag={tag}"}])
     return {"inline_keyboard": rows}
@@ -143,7 +208,6 @@ def format_hub_pinned(site_url):
         lines += ["", e(desc)]
     lines += ["", "Scegli i canali che ti interessano 👇", ""]
     for n in config.NICHES.values():
-        # il nome del canale è il link: niente @username in minuscolo a vista
         lines.append(f"{n['emoji']} {channel_link(n['channel'], n['name'])}")
     if config.LAMPO.get("enabled"):
         lines.append(f"⚡ {channel_link(config.LAMPO['channel'], 'Offerte lampo')} (solo sconti top)")
