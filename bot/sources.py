@@ -1,9 +1,9 @@
 """
 Fonti delle offerte.
  - Amazon PA-API (automatica, attiva quando inserisci le chiavi dopo le 3 vendite)
- - Lista prodotti data/prodotti.csv (fase di avvio): link, prezzo e data facoltativi
+ - Lista prodotti data/prodotti.csv (fase di avvio): link, prezzo, data e immagine facoltativi
  - eBay Browse API (facoltativa, prezzi reali da subito)
-Ogni fonte restituisce una lista di dict "offerta" con lo stesso formato.
+Ogni fonte restituisce offerte nello STESSO formato: il post che ne esce è identico.
 """
 import base64
 import csv
@@ -11,6 +11,7 @@ import os
 import random
 import time
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -29,6 +30,10 @@ def _offer(**kw):
 
 def amazon_link(asin, tag):
     return f"https://www.amazon.it/dp/{asin}?tag={tag}"
+
+
+def today_label():
+    return datetime.now(ZoneInfo("Europe/Rome")).strftime("%d/%m")
 
 
 # --------------------------------------------------------------------------- Amazon PA-API
@@ -84,11 +89,13 @@ def _parse_amazon_item(it, niche_id, tag):
     disc = _g(it, "offers.listings.0.price.savings.percentage")
     if disc is None and old and old > price:
         disc = round((1 - price / old) * 100)
-    url = _g(it, "detail_page_url") or amazon_link(it.asin, tag)
-    return _offer(key=f"amz:{it.asin}", source="amazon", niche=niche_id, title=title, url=url,
+    brand = _g(it, "item_info.by_line_info.brand.display_value") or ""
+    # Link nel post: forma corta e pulita (con il tuo tag), come per i prodotti del CSV
+    return _offer(key=f"amz:{it.asin}", source="amazon", niche=niche_id, title=title,
+                  url=amazon_link(it.asin, tag), preview_url=amazon_link(it.asin, tag),
                   image=_g(it, "images.primary.large.url") or "", price=float(price),
                   old_price=float(old) if old else None, discount=int(disc) if disc else None,
-                  brand=_g(it, "item_info.by_line_info.brand.display_value") or "")
+                  brand=brand, price_date=today_label())
 
 
 # --------------------------------------------------------------------------- Lista prodotti (CSV)
@@ -205,7 +212,7 @@ def from_ebay():
                     url=url, image=(it.get("image") or {}).get("imageUrl", ""),
                     price=float(it["price"]["value"]),
                     old_price=float(mp.get("originalPrice", {}).get("value", 0)) or None,
-                    discount=int(float(disc))))
+                    discount=int(float(disc)), price_date=today_label()))
             time.sleep(0.5)
     print(f"[ebay] trovate {len(offers)} offerte")
     return offers

@@ -28,6 +28,7 @@ MAX_POSTS = getattr(config, "MAX_POSTS_PER_NICHE_PER_RUN", 2)
 MIN_DISCOUNT = getattr(config, "MIN_DISCOUNT", 15)
 MIN_SAVING_VALUE = getattr(config, "MIN_SAVING_VALUE", 5)
 PRICE_MAX_AGE_HOURS = getattr(config, "PRICE_MAX_AGE_HOURS", 24)
+PREVIEW_FALLBACK = getattr(config, "PREVIEW_FALLBACK", False)   # True = senza foto usa l'anteprima del link
 
 
 def load(path, default):
@@ -54,7 +55,7 @@ def in_active_hours(h):
 
 
 def good_enough(o):
-    """Filtro di qualità. I prodotti senza prezzo (lista CSV) e con prezzo manuale passano sempre."""
+    """Filtro di qualità. I prodotti del CSV (senza prezzo o con prezzo a mano) passano sempre."""
     if not o.get("price") or o.get("manual_price"):
         return True
     if (o.get("discount") or 0) < MIN_DISCOUNT:
@@ -67,7 +68,7 @@ def good_enough(o):
 
 
 def expire_prices(history, now):
-    """Le offerte Amazon API non vanno mostrate con prezzo oltre PRICE_MAX_AGE_HOURS."""
+    """I prezzi non vanno mostrati sul sito oltre PRICE_MAX_AGE_HOURS."""
     limit = (now - timedelta(hours=PRICE_MAX_AGE_HOURS)).isoformat()
     for o in history:
         if o.get("source") == "amazon" and o.get("price") and o.get("seen", "") < limit:
@@ -76,9 +77,8 @@ def expire_prices(history, now):
 
 
 def send(tg, chat_id, o, niche, tag, for_hub=False):
-    # Anteprima: "lungo" = pagina amazon.it/dp/... (mostra Amazon.it), "corto" = il link del CSV
-    use_long = getattr(config, "PREVIEW_LINK", "lungo") == "lungo" and o.get("preview_url")
-    preview = o["preview_url"] if use_long else o.get("url", "")
+    """Foto + didascalia. Anteprima del link solo se PREVIEW_FALLBACK = True e manca la foto."""
+    preview = o.get("preview_url", "") if PREVIEW_FALLBACK else ""
     return tg.post_offer(chat_id, format_offer(o, niche, for_hub=for_hub), o.get("image"),
                          build_markup(o, tag), preview_url=preview)
 

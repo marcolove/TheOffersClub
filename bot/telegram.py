@@ -9,6 +9,7 @@ import requests
 import config
 
 API = "https://api.telegram.org/bot{token}/{method}"
+UA = {"User-Agent": "Mozilla/5.0 (compatible; OffersBot/1.0)"}
 
 
 class Telegram:
@@ -16,7 +17,7 @@ class Telegram:
         self.token, self.dry = token, dry_run
         self.last_error = ""
 
-    def call(self, method, **data):
+    def call(self, method, files=None, **data):
         self.last_error = ""
         if self.dry:
             print(f"  [dry-run] {method} -> {data.get('chat_id')}: "
@@ -25,7 +26,8 @@ class Telegram:
             return {"message_id": 0}
         for attempt in range(3):
             try:
-                r = requests.post(API.format(token=self.token, method=method), data=data, timeout=30)
+                r = requests.post(API.format(token=self.token, method=method), data=data,
+                                  files=files, timeout=60)
                 j = r.json()
             except Exception as e:                   # rete o risposta non valida: riprova
                 print(f"  [telegram] {method}: {e}")
@@ -43,16 +45,37 @@ class Telegram:
             return None
         return None
 
+    def _send_photo(self, chat_id, text, image, extra):
+        """Foto + didascalia. Prima prova con l'indirizzo dell'immagine; se Telegram non riesce
+        a scaricarla, la scarica il bot e la carica direttamente."""
+        res = self.call("sendPhoto", chat_id=chat_id, photo=image, caption=text,
+                        parse_mode="HTML", **extra)
+        if res:
+            return res
+        if self.dry:
+            return res
+        try:
+            r = requests.get(image, headers=UA, timeout=30)
+            r.raise_for_status()
+            if len(r.content) < 1000:
+                raise ValueError("immagine vuota")
+        except Exception as e:
+            print(f"  [telegram] immagine non scaricabile ({e})")
+            return None
+        return self.call("sendPhoto", files={"photo": ("foto.jpg", r.content)}, chat_id=chat_id,
+                         caption=text, parse_mode="HTML", **extra)
+
     def post_offer(self, chat_id, text, image="", markup=None, preview_url=""):
+        """Foto con didascalia (nessuna anteprima del link, quindi niente scritte aggiunte da
+        Telegram). Se manca la foto o non è utilizzabile, pubblica solo il testo; l'anteprima
+        del link si usa solo se preview_url è valorizzato (config.PREVIEW_FALLBACK = True)."""
         extra = {"reply_markup": json.dumps(markup)} if markup else {}
-        if image:
-            res = self.call("sendPhoto", chat_id=chat_id, photo=image, caption=text,
-                            parse_mode="HTML", **extra)
+        if image and len(text) <= 1000:                # limite Telegram per le didascalie: 1024
+            res = self._send_photo(chat_id, text, image, extra)
             if res:
                 return res
-            print("  [telegram] immagine non accettata: uso l'anteprima del link")
+            print("  [telegram] foto non pubblicata: invio solo il testo")
         if preview_url:
-            # anteprima grande sopra il testo (la foto la prende Telegram dalla pagina)
             lp = {"url": preview_url, "prefer_large_media": True, "show_above_text": True}
             return self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
                              link_preview_options=json.dumps(lp), **extra)
@@ -125,24 +148,6 @@ SAVING_TEMPLATES = [
     "📉 Risparmi {s} (<b>-{d}%</b>)",
 ]
 
-# Frasi di commento (solo offerte con prezzo preso dall'API, non quelle con prezzo a mano)
-PHRASES_BASE = [
-    "Prezzo interessante: controlla le recensioni prima di acquistare.",
-    "Un buon prezzo per questo prodotto.",
-    "Vale un'occhiata se lo stavi cercando.",
-    "", "",
-]
-PHRASES_35 = [
-    "Sconto importante: da guardare.",
-    "Ribasso notevole rispetto al prezzo di listino.",
-    "Bel taglio di prezzo.", "",
-]
-PHRASES_50 = [
-    "Sconto molto alto: da guardare subito.",
-    "Ribasso davvero forte, controlla i dettagli.",
-    "Metà prezzo o quasi!", "",
-]
-
 # Avviso affiliato: sempre presente, in una sola riga. {dt} = data del prezzo
 DISCLOSURES = [
     "<i>Link affiliato · prezzo soggetto a variazioni</i>",
@@ -165,7 +170,7 @@ def _pick(lst):
 
 
 def short_title(t, n=70):
-    """Titolo breve: l'anteprima mostra già quello completo."""
+    """Titolo breve (i titoli dell'API Amazon sono lunghissimi)."""
     t = t.strip()
     if len(t) <= n:
         return t
@@ -178,6 +183,7 @@ def short_title(t, n=70):
 
 
 def format_offer(o, niche, for_hub=False):
+    """Stesso formato per tutte le fonti (CSV, API Amazon, eBay)."""
     e = html.escape
     title = short_title(o["title"])
     d = o.get("discount") or 0
@@ -205,22 +211,15 @@ def format_offer(o, niche, for_hub=False):
                 lines.append(_pick(SAVING_TEMPLATES).format(d=d, s=eur(o["old_price"] - o["price"])))
         else:
             lines.append(f"{pe} <b>{eur(o['price'])}</b>")
-        if not o.get("manual_price"):
-            ph = _pick(PHRASES_50 if d >= 50 else PHRASES_35 if d >= 35 else PHRASES_BASE)
-            if ph:
-                lines.append(ph)
 
     if getattr(config, "POST_STYLE", "testo") == "testo":
         lines += ["", _pick(LINK_LINES).format(u=e(o["url"]))]  # aria prima del link
     if for_hub:
         lines += ["", f"📢 Altre offerte: {channel_link(niche['channel'], niche['name'])}"]
 
-    # una sola riga finale: data del prezzo (se manuale) + avviso affiliato
-    if o.get("manual_price") and o.get("price"):
-        if o.get("price_date"):
-            foot = _pick(DISCLOSURES_DATED).format(dt=o["price_date"])
-        else:
-            foot = "<i>Prezzo al momento della pubblicazione · link affiliato</i>"
+    # una sola riga finale: data del prezzo (se c'è un prezzo) + avviso affiliato
+    if o.get("price") and o.get("price_date"):
+        foot = _pick(DISCLOSURES_DATED).format(dt=o["price_date"])
     else:
         foot = _pick(DISCLOSURES)
     lines += ["", foot]
