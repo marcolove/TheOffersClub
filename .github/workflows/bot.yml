@@ -28,6 +28,14 @@ jobs:
     outputs:
       deploy: ${{ steps.gate.outputs.deploy }}
     steps:
+      # Attesa casuale 0-5 min solo sui giri automatici da cron-job.org
+      - name: Attesa casuale
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.auto == 'true'
+        run: |
+          D=$((RANDOM % 301))
+          echo "Attendo ${D}s prima di pubblicare"
+          sleep $D
+
       - uses: actions/checkout@v4
         with:
           ref: main              # sempre l'ultima versione (con lo stato salvato dal giro precedente)
