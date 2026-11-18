@@ -178,7 +178,9 @@ DISCLOSURES_DATED = [
     "<i>Prezzo rilevato il {dt} · link affiliato · può cambiare</i>",
 ]
 
-LINK_LINES = ["🔎 {u}", "👉 {u}", "🛒 {u}", "🔗 {u}"]
+# Riga del link: il testo è sempre "Apri su Amazon" (o eBay) e il link è nascosto dietro.
+# Cambia solo l'emoji davanti.
+LINK_EMOJIS = ["👉", "🛒", "🔎", "🛍️"]
 CTA_BUTTONS = ["🛒 Vedi su {s}", "👉 Vai all'offerta", "🔎 Scopri su {s}", "🛍️ Apri su {s}", "🛒 Vedi l'offerta"]
 
 
@@ -197,6 +199,12 @@ def short_title(t, n=70):
         if i >= 25:
             return cut[:i].strip()
     return cut[:cut.rfind(" ")].strip() if " " in cut else cut
+
+
+def link_line(o):
+    """'👉 Apri su Amazon' cliccabile: nel post non si vede l'indirizzo del link."""
+    store = "eBay" if o.get("source") == "ebay" else "Amazon"
+    return f'{_pick(LINK_EMOJIS)} <a href="{html.escape(o["url"], quote=True)}">Apri su {store}</a>'
 
 
 def format_offer(o, niche, for_hub=False):
@@ -230,7 +238,7 @@ def format_offer(o, niche, for_hub=False):
             lines.append(f"{pe} <b>{eur(o['price'])}</b>")
 
     if getattr(config, "POST_STYLE", "testo") == "testo":
-        lines += ["", _pick(LINK_LINES).format(u=e(o["url"]))]  # aria prima del link
+        lines += ["", link_line(o)]                             # aria prima del link
     if for_hub:
         lines += ["", f"📢 Altre offerte: {channel_link(niche['channel'], niche['name'])}"]
 
