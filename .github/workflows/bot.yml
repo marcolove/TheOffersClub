@@ -2,7 +2,7 @@ name: Bot offerte
 
 on:
   schedule:
-    - cron: "5 */2 * * *"
+    - cron: "7,27,47 7-20 * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -20,6 +20,8 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.gate.outputs.deploy }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -52,15 +54,32 @@ jobs:
           git config user.email "bot@users.noreply.github.com"
           git add data/state.json data/history.json
           git diff --staged --quiet || git commit -m "aggiornamento offerte [skip ci]"
+          git pull --rebase -q || true
           git push || true
 
+      # Deploy del sito: sempre su push/manuale, solo ~4 volte al giorno sui giri programmati
+      - name: Decide se rifare il deploy del sito
+        id: gate
+        run: |
+          H=$(date -u +%H); M=$(date -u +%M)
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          elif [ $((10#$H % 4)) -eq 3 ] && [ $((10#$M)) -lt 20 ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/configure-pages@v5
+        if: steps.gate.outputs.deploy == 'true'
       - uses: actions/upload-pages-artifact@v3
+        if: steps.gate.outputs.deploy == 'true'
         with:
           path: public
 
   deploy:
     needs: run
+    if: needs.run.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
