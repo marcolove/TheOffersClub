@@ -1,79 +1,8 @@
 {
  "posted": {
-  "amz:B07R4CNDRM": "2026-11-18T13:52:44.114444+00:00",
-  "amz:B09GVHN99N": "2026-11-18T13:56:25.239858+00:00",
-  "amz:B0F22BB4BV": "2026-11-18T14:11:14.546975+00:00",
-  "amz:B0BQCTF5BW": "2026-11-18T14:23:41.144859+00:00"
+
  },
  "hub_pin_id": 8,
  "live": {
-  "amz:B07R4CNDRM": {
-   "posted": "2026-11-18T13:52:44.114444+00:00",
-   "origin": "csv",
-   "asin": "B07R4CNDRM",
-   "price": 8.99,
-   "manual_price": true,
-   "image": "https://m.media-amazon.com/images/I/71hjO2pckBL._AC_SX522_.jpg",
-   "msgs": [
-    {
-     "chat": "@theoffersclub_casa",
-     "id": 29,
-     "kind": "photo",
-     "text": "🏠 <b>American Crew Matte Clay cera per capelli uomo 85g</b>\n⭐ Tenuta medio-alta e finish opaco\n\n💶 <b>A 8,99 €</b> invece di <s>12,50 €</s>\n🤑 <b>-28%</b>, risparmi 3,51 €\n\n🛍️ <a href=\"https://link.amazon/B03oaMwVv\">Apri su Amazon</a>\n\n🧭 Ti interessano altri temi? <a href=\"https://t.me/theoffersclub_hub\">Trovi tutti i canali nell'Hub</a>\n\n<i>Prezzo del 18/11 · #affiliato · verifica sulla pagina</i>",
-     "markup": ""
-    }
-   ]
-  },
-  "amz:B09GVHN99N": {
-   "posted": "2026-11-18T13:56:25.239858+00:00",
-   "origin": "csv",
-   "asin": "B09GVHN99N",
-   "price": 14.99,
-   "manual_price": true,
-   "image": "https://m.media-amazon.com/images/I/71cdMWRbeWL._AC_SY300_SX300_QL70_ML2_.jpg",
-   "msgs": [
-    {
-     "chat": "@theoffersclub_casa",
-     "id": 30,
-     "kind": "photo",
-     "text": "Segnalazione del giorno\n🍳 <b>Alpro Protein 50g bevanda alla soia gusto cioccolato 8x1L</b>\n✅ Vegetale e ad alto contenuto proteico\n\n💰 <b>14,99 €</b> anziché <s>19,90 €</s>\n📉 Risparmi 4,91 € (<b>-25%</b>)\n\n🛒 <a href=\"https://link.amazon/B069pulIU\">Apri su Amazon</a>\n\n📢 Il club ha anche altri canali: <a href=\"https://t.me/theoffersclub_hub\">scoprili tutti</a>\n\n<i>Prezzo rilevato il 18/11 · link affiliato · può cambiare</i>",
-     "markup": ""
-    }
-   ]
-  },
-  "amz:B0F22BB4BV": {
-   "posted": "2026-11-18T14:11:14.546975+00:00",
-   "origin": "csv",
-   "asin": "B0F22BB4BV",
-   "price": 17.94,
-   "manual_price": true,
-   "image": "https://m.media-amazon.com/images/I/717jA4SIMqL._AC_SX522_.jpg",
-   "msgs": [
-    {
-     "chat": "@theoffersclub_casa",
-     "id": 31,
-     "kind": "photo",
-     "text": "Ve lo segnalo\n🛋️ <b>Breeze Men Dry Protection deodorante squeeze 6x100ml</b>\n📌 Confezione da 6 per fare scorta\n\n💰 <b>A 17,94 €</b> invece di <s>23,40 €</s>\n📉 <b>-23%</b> · risparmi 5,46 €\n\n🛍️ <a href=\"https://link.amazon/B06GAAyxt\">Apri su Amazon</a>\n\n🗂️ Tutte le categorie in un posto solo: <a href=\"https://t.me/theoffersclub_hub\">apri l'Hub</a>\n\n<i>Prezzo del 18/11 · può variare · link affiliato Amazon</i>",
-     "markup": ""
-    }
-   ]
-  },
-  "amz:B0BQCTF5BW": {
-   "posted": "2026-11-18T14:23:41.144859+00:00",
-   "origin": "csv",
-   "asin": "B0BQCTF5BW",
-   "price": null,
-   "manual_price": false,
-   "image": "8,99",
-   "msgs": [
-    {
-     "chat": "@theoffersclub_casa",
-     "id": 32,
-     "kind": "text",
-     "text": "🛁 <b>American Crew Fiber</b>\n✅ Cera Capelli Uomo\n\n🛍️ <a href=\"https://www.amazon.it/dp/B0BQCTF5BW?tag=theoffersclub-21\">Apri su Amazon</a>\n\n🗂️ Tutte le categorie in un posto solo: <a href=\"https://t.me/theoffersclub_hub\">apri l'Hub</a>\n\n<i>Link affiliato · prezzo soggetto a variazioni</i>",
-     "markup": ""
-    }
-   ]
-  }
- }
+ 
 }
