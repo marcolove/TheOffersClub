@@ -24,16 +24,21 @@ MIN_HOUR = 8
 MAX_HOUR = 22
 
 # ------------------------------------------------------------------ Quantità e filtri
-MIN_POSTS_PER_NICHE_PER_RUN = 1              # post per nicchia a ogni giro (ogni 2 ore): da...
+MIN_POSTS_PER_NICHE_PER_RUN = 1              # post per nicchia a ogni giro: da...
 MAX_POSTS_PER_NICHE_PER_RUN = 1              # ...a (numero casuale)
 REPOST_AFTER_DAYS = 10                       # non ripubblicare lo stesso prodotto prima di N giorni
 MIN_DISCOUNT = 15                            # sconto minimo % per le offerte con prezzo
 MIN_SAVING_VALUE = 5                         # risparmio minimo in euro (-1 = disattivato)
-HUB_MIN_DISCOUNT = 101                        # sconto minimo per finire anche nel canale HUB
+HUB_MIN_DISCOUNT = 101                       # 101 = nessuna offerta inoltrata sull'Hub
 LAMPO_MIN_DISCOUNT = 60                      # sconto minimo per il canale LAMPO (se attivo)
 PRICE_MAX_AGE_HOURS = 24                     # i prezzi Amazon API non si mostrano sul sito oltre N ore
-PRIME_BUTTON = True                          # bottone "Prova Prime gratis" sotto i post Amazon
+PRIME_BUTTON = True                          # bottone "Prova Prime gratis" (solo con POST_STYLE = "bottoni")
 SITE_OFFERS_PER_PAGE = 60                    # offerte per pagina del sito
+
+# Filtro "prodotti veri" (solo offerte automatiche da API Amazon / eBay, non il CSV):
+# per ogni nicchia "min_price" = prezzo minimo in euro, "exclude_words" = parole che, se
+# compaiono nel titolo, fanno scartare il prodotto (ricambi, accessori). L'elenco generale
+# (ricambio, compatibile con, adatto per, cover per, pellicola, usato...) è già nel bot.
 
 HUB = {
     "channel": "@theoffersclub_hub",         # canale principale
@@ -55,6 +60,9 @@ NICHES = {
         "seo_title": "Offerte tecnologia e gaming di oggi",
         "seo_intro": "Le migliori offerte del giorno su PC, monitor, SSD, cuffie, smartphone e console, aggiornate automaticamente più volte al giorno.",
         "amazon_search_index": "All",
+        "min_price": 10,
+        "exclude_words": ["cavo usb", "cavo hdmi", "cavo di ricarica", "cavi usb", "custodia",
+                          "supporto per", "adattatore", "protezione schermo"],
         "keywords": [
             # PC e componenti
             "notebook", "laptop gaming", "mini pc", "pc desktop", "monitor 27 pollici",
@@ -62,21 +70,20 @@ NICHES = {
             "memoria ram ddr5", "scheda video", "alimentatore pc", "case pc", "dissipatore cpu",
             # Periferiche
             "mouse gaming", "mouse wireless", "tastiera meccanica", "tastiera wireless",
-            "webcam", "microfono usb", "tappetino mouse xxl", "docking station usb c",
+            "webcam", "microfono usb", "docking station usb c",
             "hub usb c", "stampante multifunzione", "stampante 3d",
             # Audio
             "cuffie bluetooth", "cuffie noise cancelling", "auricolari true wireless",
             "cuffie gaming", "soundbar", "cassa bluetooth", "giradischi",
             # Smartphone e tablet
             "smartphone", "tablet", "ebook reader", "caricatore usb c gan", "powerbank",
-            "cavo usb c", "caricatore wireless", "cover smartphone", "pellicola vetro temperato",
+            "caricatore wireless",
             # Smart home e rete
             "router wifi 6", "mesh wifi", "ripetitore wifi", "videocamera sorveglianza wifi",
             "videocitofono smart", "lampadina smart", "presa smart", "termostato smart",
             "echo dot", "fire tv stick", "chromecast",
             # Wearable e foto
             "smartwatch", "smartband", "action cam", "fotocamera mirrorless", "drone",
-            "scheda microsd", "chiavetta usb",
             # Gaming
             "console", "controller wireless", "nintendo switch", "ps5", "xbox series",
             "sedia gaming", "visore vr",
@@ -94,6 +101,8 @@ NICHES = {
         "seo_title": "Offerte casa e cucina di oggi",
         "seo_intro": "Friggitrici ad aria, robot aspirapolvere, macchine da caffè e tutto per la casa in sconto, selezionati ogni giorno.",
         "amazon_search_index": "All",
+        "min_price": 10,
+        "exclude_words": ["sacchetti per", "spazzole", "panni", "mop di ricambio", "testine"],
         "keywords": [
             # Piccoli elettrodomestici cucina
             "friggitrice ad aria", "macchina caffè espresso", "macchina caffè capsule",
@@ -121,8 +130,8 @@ NICHES = {
             "materasso memory", "cuscino memory", "set lenzuola", "piumone", "coperta",
             "tende oscuranti", "lampada da terra", "luci led striscia", "organizer armadio",
             # Consumabili (si vendono molto)
-            "detersivo lavatrice", "capsule lavastoviglie", "ammorbidente", "carta igienica",
-            "sacchetti spazzatura", "capsule caffè", "cialde caffè",
+            "detersivo lavatrice", "capsule lavastoviglie", "ammorbidente",
+            "capsule caffè", "cialde caffè",
         ],
         "ebay_queries": ["friggitrice ad aria", "robot aspirapolvere", "macchina caffè",
                          "aspirapolvere senza fili", "set pentole"],
@@ -135,6 +144,10 @@ NICHES = {
         "seo_title": "Offerte utensili e fai da te di oggi",
         "seo_intro": "Avvitatori, trapani, saldatrici, smerigliatrici, set di attrezzi e giardinaggio di Bosch, Makita, Einhell, DeWalt e altri marchi, in sconto oggi.",
         "amazon_search_index": "All",
+        "min_price": 15,
+        "exclude_words": ["set di dischi", "set dischi", "dischi da taglio", "dischi abrasivi",
+                          "set di punte", "set punte", "inserti", "lame di ricambio",
+                          "spazzole carbone"],
         "keywords": [
             # Elettroutensili
             "avvitatore a batteria", "trapano avvitatore", "trapano a percussione",
@@ -157,8 +170,7 @@ NICHES = {
             # Attrezzi manuali
             "set cacciaviti", "set chiavi a bussola", "chiave dinamometrica",
             "set chiavi combinate", "pinze", "cassetta attrezzi", "carrello porta attrezzi",
-            "valigetta attrezzi", "morsa da banco", "banco da lavoro", "set punte trapano",
-            "set inserti avvitatore", "dischi smerigliatrice", "lame sega circolare",
+            "valigetta attrezzi", "morsa da banco", "banco da lavoro",
             # Giardino
             "tagliaerba a batteria", "decespugliatore", "tagliasiepi", "motosega",
             "motosega a batteria", "soffiatore foglie", "robot tagliaerba", "biotrituratore",
@@ -166,15 +178,17 @@ NICHES = {
             # Auto e officina
             "avviatore emergenza auto", "caricabatterie auto", "cric idraulico",
             "lucidatrice auto",
-            # Batterie e marchi (offerte su kit e batterie)
-            "batteria 18v", "kit batteria caricatore", "bosch professional", "bosch verde",
-            "makita", "dewalt", "einhell power x-change", "ryobi one+", "milwaukee",
-            "metabo", "stanley", "wera", "parkside",
+            # Kit e marchi (sempre abbinati a un prodotto, per evitare i ricambi)
+            "kit batteria caricatore", "bosch professional trapano", "bosch professional avvitatore",
+            "bosch verde trapano", "makita trapano", "makita avvitatore", "makita smerigliatrice",
+            "dewalt trapano", "dewalt avvitatore", "einhell power x-change kit",
+            "ryobi one+ kit", "milwaukee avvitatore", "metabo avvitatore", "parkside kit",
         ],
         "ebay_queries": ["avvitatore batteria", "saldatrice inverter", "set attrezzi",
                          "smerigliatrice", "idropulitrice", "tagliaerba batteria"],
     },
 }
+
 # Parole nel titolo che fanno aggiungere l'avviso "batteria non inclusa"
 NO_BATTERY_HINTS = ["senza batteria", "solo corpo", "body only", "batteria non inclusa", "tool only"]
 
