@@ -1,9 +1,25 @@
 {
  "posted": {
-
+  "amz:B07R4CNDRM": "2026-11-18T12:37:40.516526+00:00"
  },
  "hub_pin_id": 5,
  "live": {
-
+  "amz:B07R4CNDRM": {
+   "posted": "2026-11-18T12:37:40.516526+00:00",
+   "origin": "csv",
+   "asin": "B07R4CNDRM",
+   "price": 8.99,
+   "manual_price": true,
+   "image": "https://m.media-amazon.com/images/I/71hjO2pckBL._AC_SX522_.jpg",
+   "msgs": [
+    {
+     "chat": "@theoffersclub_casa",
+     "id": 25,
+     "kind": "photo",
+     "text": "Ve lo segnalo\n🍽️ <b>American Crew Matte Clay cera per capelli uomo 85g</b>\n💡 Tenuta medio-alta e finish opaco\n\n💶 Ora a <b>8,99 €</b>, prima <s>12,50 €</s>\n📉 Risparmi 3,51 € (<b>-28%</b>)\n\n🛒 <a href=\"https://link.amazon/B03oaMwVv\">Apri su Amazon</a>\n\n🎯 Cerchi altro? <a href=\"https://t.me/theoffersclub_hub\">Entra nell'Hub e scegli i canali</a>\n\n<i>Prezzo rilevato il 18/11 · link affiliato · può cambiare</i>",
+     "markup": ""
+    }
+   ]
+  }
  }
 }
