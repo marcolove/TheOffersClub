@@ -8,6 +8,7 @@ Uso:  python -m bot.main            (pubblica davvero)
 import json
 import os
 import random
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -37,6 +38,52 @@ PRICE_RISE_TOLERANCE = getattr(config, "PRICE_RISE_TOLERANCE", 0.03)  # +3% sul 
 EXPIRED_IMAGE = getattr(config, "EXPIRED_IMAGE", True)          # foto grigia con la scritta
 LABEL_END = getattr(config, "EXPIRED_LABEL_END", "TERMINATA")
 LABEL_STALE = getattr(config, "EXPIRED_LABEL_STALE", "SCADUTA")
+
+# ------------------------------------------------------------------ Solo prodotti "veri"
+# Vale per le offerte trovate in automatico (API Amazon, eBay). I prodotti che metti a mano
+# nel CSV li hai scelti tu e non vengono filtrati.
+# Prezzo minimo (prezzo scontato) sotto cui il prodotto è quasi sempre un accessorio.
+MIN_PRICE = getattr(config, "MIN_PRICE", 15)            # per nicchia: "min_price" in NICHES
+# Frasi nel titolo che indicano ricambi, accessori, prodotti "compatibili con".
+# Si confrontano parole intere, senza maiuscole/minuscole.
+EXCLUDE_WORDS = getattr(config, "EXCLUDE_WORDS", [
+    "ricambio", "ricambi", "di ricambio", "pezzi di ricambio", "parti di ricambio",
+    "compatibile con", "compatibili con", "compatibile per", "compatibili per",
+    "adatto per", "adatta per", "adatti per", "adatto a", "sostituzione", "sostitutivo",
+    "sostitutiva", "sostitutivi", "in sostituzione", "replacement", "spare", "compatible",
+    "kit riparazione", "guarnizione", "guarnizioni", "o-ring", "spazzola di ricambio",
+    "testine di ricambio", "filtro di ricambio", "filtri di ricambio", "sacchetti per",
+    "cover per", "custodia per", "pellicola", "vetro temperato", "skin", "adesivo", "adesivi",
+    "usato", "ricondizionato", "difettoso",
+])
+# Parole in più da escludere solo in una nicchia: "exclude_words" in NICHES.
+
+
+def _rx(words):
+    words = [w.strip().lower() for w in words if w and w.strip()]
+    if not words:
+        return None
+    return re.compile(r"(?<!\w)(" + "|".join(re.escape(w) for w in words) + r")(?!\w)", re.IGNORECASE)
+
+
+_GLOBAL_RX = _rx(EXCLUDE_WORDS)
+
+
+def is_real_product(o):
+    """False per ricambi, accessori e articoli troppo economici (solo offerte automatiche)."""
+    if o.get("origin") == "csv":
+        return True
+    niche = config.NICHES.get(o.get("niche"), {})
+    title = o.get("title", "")
+    min_price = niche.get("min_price", MIN_PRICE)
+    if o.get("price") and o["price"] < min_price:
+        return False
+    if _GLOBAL_RX and _GLOBAL_RX.search(title):
+        return False
+    extra = _rx(niche.get("exclude_words", []))
+    if extra and extra.search(title):
+        return False
+    return True
 
 
 def load(path, default):
@@ -192,7 +239,11 @@ def main():
         if not in_active_hours(h) and "--force" not in sys.argv:
             print(f"Ora italiana {h}: fuori fascia ({MIN_HOUR}-{MAX_HOUR}), niente post")
         else:
-            offers = [o for o in sources.collect_all(tag) if good_enough(o)]
+            found = sources.collect_all(tag)
+            offers = [o for o in found if good_enough(o) and is_real_product(o)]
+            skipped = len([o for o in found if good_enough(o)]) - len(offers)
+            if skipped:
+                print(f"Scartati {skipped} ricambi/accessori o prodotti sotto il prezzo minimo")
             random.shuffle(offers)
             # prima i prodotti con prezzo/sconto, poi gli altri
             offers.sort(key=lambda o: (o.get("discount") or 0, o.get("price") is not None), reverse=True)
