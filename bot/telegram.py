@@ -1,4 +1,4 @@
-"""Invio messaggi ai canali Telegram tramite Bot API."""
+"""Invio e modifica dei messaggi nei canali Telegram tramite Bot API."""
 import html
 import json
 import random
@@ -7,9 +7,10 @@ import time
 import requests
 
 import config
+from bot import images
 
 API = "https://api.telegram.org/bot{token}/{method}"
-UA = {"User-Agent": "Mozilla/5.0 (compatible; OffersBot/1.0)"}
+CAPTION_MAX = 950          # limite Telegram 1024: resta spazio per la riga "offerta terminata"
 
 
 class Telegram:
@@ -22,7 +23,7 @@ class Telegram:
         if self.dry:
             print(f"  [dry-run] {method} -> {data.get('chat_id')}: "
                   f"{(data.get('caption') or data.get('text') or '')[:90]!r}"
-                  f"{' +bottoni' if data.get('reply_markup') else ''}")
+                  f"{' +foto' if files or data.get('photo') else ''}")
             return {"message_id": 0}
         for attempt in range(3):
             try:
@@ -35,7 +36,7 @@ class Telegram:
                 continue
             if j.get("ok"):
                 time.sleep(1.2)                       # rispetta i limiti di Telegram
-                return j["result"]
+                return j["result"] if isinstance(j["result"], dict) else {"ok": True}
             if j.get("error_code") == 429:            # troppi messaggi: aspetta
                 time.sleep(j.get("parameters", {}).get("retry_after", 5) + 1)
                 continue
@@ -45,42 +46,58 @@ class Telegram:
             return None
         return None
 
-    def _send_photo(self, chat_id, text, image, extra):
-        """Foto + didascalia. Prima prova con l'indirizzo dell'immagine; se Telegram non riesce
-        a scaricarla, la scarica il bot e la carica direttamente."""
-        res = self.call("sendPhoto", chat_id=chat_id, photo=image, caption=text,
-                        parse_mode="HTML", **extra)
-        if res:
-            return res
-        if self.dry:
-            return res
-        try:
-            r = requests.get(image, headers=UA, timeout=30)
-            r.raise_for_status()
-            if len(r.content) < 1000:
-                raise ValueError("immagine vuota")
-        except Exception as e:
-            print(f"  [telegram] immagine non scaricabile ({e})")
-            return None
-        return self.call("sendPhoto", files={"photo": ("foto.jpg", r.content)}, chat_id=chat_id,
-                         caption=text, parse_mode="HTML", **extra)
-
+    # ------------------------------------------------------------------ pubblicazione
     def post_offer(self, chat_id, text, image="", markup=None, preview_url=""):
-        """Foto con didascalia (nessuna anteprima del link, quindi niente scritte aggiunte da
-        Telegram). Se manca la foto o non è utilizzabile, pubblica solo il testo; l'anteprima
-        del link si usa solo se preview_url è valorizzato (config.PREVIEW_FALLBACK = True)."""
+        """Foto (formato fisso, preparata dal bot) con didascalia: nessuna anteprima del link,
+        quindi niente scritte aggiunte da Telegram. Se la foto non è utilizzabile pubblica solo
+        il testo. Il risultato contiene _kind = "photo" oppure "text"."""
         extra = {"reply_markup": json.dumps(markup)} if markup else {}
-        if image and len(text) <= 1000:                # limite Telegram per le didascalie: 1024
-            res = self._send_photo(chat_id, text, image, extra)
+        if image and len(text) <= CAPTION_MAX:
+            data = images.prepared(image)
+            res = None
+            if data:
+                res = self.call("sendPhoto", files={"photo": ("foto.jpg", data)}, chat_id=chat_id,
+                                caption=text, parse_mode="HTML", **extra)
+            if not res:                                # ripiego: foto originale dall'indirizzo
+                res = self.call("sendPhoto", chat_id=chat_id, photo=image, caption=text,
+                                parse_mode="HTML", **extra)
             if res:
+                res["_kind"] = "photo"
                 return res
             print("  [telegram] foto non pubblicata: invio solo il testo")
         if preview_url:
             lp = {"url": preview_url, "prefer_large_media": True, "show_above_text": True}
-            return self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
-                             link_preview_options=json.dumps(lp), **extra)
-        return self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
-                         disable_web_page_preview="true", **extra)
+            res = self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
+                            link_preview_options=json.dumps(lp), **extra)
+        else:
+            res = self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
+                            disable_web_page_preview="true", **extra)
+        if res:
+            res["_kind"] = "text"
+        return res
+
+    # ------------------------------------------------------------------ offerta terminata
+    def mark_expired(self, msg, new_text, image_url="", image_label=""):
+        """Modifica un post già pubblicato: testo con la riga di scadenza e, se è una foto,
+        immagine grigia con la scritta. Nessuna notifica agli iscritti."""
+        chat, mid = msg["chat"], msg["id"]
+        extra = {"reply_markup": msg["markup"]} if msg.get("markup") else {}
+        if msg.get("kind") == "photo":
+            data = images.expired(image_url, image_label) if (image_url and image_label) else None
+            if data:
+                media = {"type": "photo", "media": "attach://foto", "caption": new_text,
+                         "parse_mode": "HTML"}
+                if self.call("editMessageMedia", files={"foto": ("foto.jpg", data)}, chat_id=chat,
+                             message_id=mid, media=json.dumps(media), **extra):
+                    return True
+            res = self.call("editMessageCaption", chat_id=chat, message_id=mid, caption=new_text,
+                            parse_mode="HTML", **extra)
+        else:
+            res = self.call("editMessageText", chat_id=chat, message_id=mid, text=new_text,
+                            parse_mode="HTML", disable_web_page_preview="true", **extra)
+        # post già modificato o cancellato a mano: va bene così, non riprovare
+        gone = any(s in self.last_error for s in ("message is not modified", "message to edit not found"))
+        return bool(res) or gone
 
     def upsert_pinned(self, chat_id, text, message_id=None):
         """Aggiorna il messaggio fissato dell'hub; se non esiste lo crea e lo fissa."""
@@ -224,6 +241,14 @@ def format_offer(o, niche, for_hub=False):
         foot = _pick(DISCLOSURES)
     lines += ["", foot]
     return "\n".join(lines)
+
+
+def expired_text(text, label):
+    """Aggiunge la riga di scadenza prima dell'avviso finale, lasciando il resto invariato."""
+    lines = text.split("\n")
+    if len(lines) >= 2 and lines[-2] == "":
+        return "\n".join(lines[:-2] + ["", label] + lines[-2:])
+    return f"{text}\n\n{label}"
 
 
 def build_markup(o, tag=""):
