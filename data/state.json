@@ -1,6 +1,7 @@
 {
  "posted": {
-  "amz:B0BQCTF5BW": "2026-11-18T14:52:38.549636+00:00"
+  "amz:B0BQCTF5BW": "2026-11-18T14:52:38.549636+00:00",
+  "amz:B07R4CNDRM": "2026-11-18T15:10:26.146349+00:00"
  },
  "hub_pin_id": 10,
  "live": {
@@ -24,6 +25,23 @@
      "id": 12,
      "kind": "photo",
      "text": "Questo vola via\n🤑 <b>American Crew Fiber</b>\n👉 Cera Capelli Uomo\n\n💸 Scende a <b>8,99 €</b> (era <s>17,00 €</s>)\n🤑 <b>-47%</b>, risparmi 8,01 €\n\n🛒 <a href=\"https://link.amazon/B07j2LSxD\">Apri su Amazon</a>\n\n📢 Altre offerte: <a href=\"https://t.me/theoffersclub_casa\">Casa &amp; Cucina</a>\n\n<i>Prezzo del 18/11 · #affiliato · verifica sulla pagina</i>",
+     "markup": ""
+    }
+   ]
+  },
+  "amz:B07R4CNDRM": {
+   "posted": "2026-11-18T15:10:26.146349+00:00",
+   "origin": "csv",
+   "asin": "B07R4CNDRM",
+   "price": 8.99,
+   "manual_price": true,
+   "image": "https://m.media-amazon.com/images/I/71hjO2pckBL._AC_SX522_.jpg",
+   "msgs": [
+    {
+     "chat": "@theoffersclub_casa",
+     "id": 35,
+     "kind": "photo",
+     "text": "Questo merita\n🪴 <b>American Crew Matte Clay cera per capelli uomo 85g</b>\n💡 Tenuta medio-alta e finish opaco\n\n🏷️ Scende a <b>8,99 €</b> (era <s>12,50 €</s>)\n🤑 <b>-28%</b>, risparmi 3,51 €\n\n🔎 <a href=\"https://link.amazon/B03oaMwVv\">Apri su Amazon</a>\n\n🗂️ Tutte le categorie in un posto solo: <a href=\"https://t.me/theoffersclub_hub\">apri l'Hub</a>\n\n<i>Prezzo del 18/11 · #affiliato · verifica sulla pagina</i>",
      "markup": ""
     }
    ]

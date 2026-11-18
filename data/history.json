@@ -1,5 +1,24 @@
 [
  {
+  "key": "amz:B07R4CNDRM",
+  "source": "amazon",
+  "origin": "csv",
+  "asin": "B07R4CNDRM",
+  "niche": "casa",
+  "title": "American Crew Matte Clay cera per capelli uomo 85g",
+  "url": "https://link.amazon/B03oaMwVv",
+  "image": "https://m.media-amazon.com/images/I/71hjO2pckBL._AC_SX522_.jpg",
+  "price": 8.99,
+  "old_price": 12.5,
+  "discount": 28,
+  "note": "Tenuta medio-alta e finish opaco",
+  "brand": "",
+  "manual_price": true,
+  "preview_url": "https://www.amazon.it/dp/B07R4CNDRM?tag=theoffersclub-21",
+  "price_date": "18/11",
+  "seen": "2026-11-18T15:10:26.146349+00:00"
+ },
+ {
   "key": "amz:B0BQCTF5BW",
   "source": "amazon",
   "origin": "csv",
@@ -365,15 +384,16 @@
   "title": "Breeze Men Dry Protection deodorante squeeze 6x100ml",
   "url": "https://link.amazon/B06GAAyxt",
   "image": "https://m.media-amazon.com/images/I/717jA4SIMqL._AC_SX522_.jpg",
-  "price": 17.94,
-  "old_price": 23.4,
-  "discount": 23,
+  "price": null,
+  "old_price": null,
+  "discount": null,
   "note": "Confezione da 6 per fare scorta",
   "brand": "",
   "manual_price": true,
   "preview_url": "https://www.amazon.it/dp/B0F22BB4BV?tag=theoffersclub-21",
   "price_date": "17/11",
-  "seen": "2026-11-17T15:05:19.547301+00:00"
+  "seen": "2026-11-17T15:05:19.547301+00:00",
+  "price_expired": true
  },
  {
   "key": "amz:B09GVHN99N",
