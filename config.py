@@ -25,7 +25,7 @@ MAX_HOUR = 22
 
 # ------------------------------------------------------------------ Quantità e filtri
 MIN_POSTS_PER_NICHE_PER_RUN = 1              # post per nicchia a ogni giro (ogni 2 ore): da...
-MAX_POSTS_PER_NICHE_PER_RUN = 2              # ...a (numero casuale)
+MAX_POSTS_PER_NICHE_PER_RUN = 1              # ...a (numero casuale)
 REPOST_AFTER_DAYS = 10                       # non ripubblicare lo stesso prodotto prima di N giorni
 MIN_DISCOUNT = 15                            # sconto minimo % per le offerte con prezzo
 MIN_SAVING_VALUE = 5                         # risparmio minimo in euro (-1 = disattivato)
