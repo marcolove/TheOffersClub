@@ -123,7 +123,7 @@ def eur(x):
 def channel_link(channel, label):
     """Testo cliccabile verso il canale: si vede il nome (label), non lo @username."""
     username = channel.lstrip("@")
-    return f'<a href="https://t.me/{html.escape(username)}">{html.escape(label)}</a>'
+    return f'<a href="https://t.me/{html.escape(username)}">{html.escape(label, quote=False)}</a>'
 
 
 # ------------------------------------------------------------------ Varietà dei post
@@ -178,6 +178,17 @@ DISCLOSURES_DATED = [
     "<i>Prezzo rilevato il {dt} · link affiliato · può cambiare</i>",
 ]
 
+# Riga che rimanda all'Hub, sotto ogni post dei canali tematici. {a} = parte cliccabile.
+# Si può cambiare l'elenco da config.py con HUB_PROMO_LINES = [("testo con {a}", "parte cliccabile"), ...]
+HUB_PROMO_LINES = [
+    ("🌐 Altre categorie? {a}", "Scopri tutti i canali tematici"),
+    ("🧭 Ti interessano altri temi? {a}", "Trovi tutti i canali nell'Hub"),
+    ("🚀 Più offerte su altri temi: {a}", "vai all'Hub"),
+    ("🎯 Cerchi altro? {a}", "Entra nell'Hub e scegli i canali"),
+    ("📢 Il club ha anche altri canali: {a}", "scoprili tutti"),
+    ("🗂️ Tutte le categorie in un posto solo: {a}", "apri l'Hub"),
+]
+
 # Riga del link: il testo è sempre "Apri su Amazon" (o eBay) e il link è nascosto dietro.
 # Cambia solo l'emoji davanti.
 LINK_EMOJIS = ["👉", "🛒", "🔎", "🛍️"]
@@ -207,9 +218,21 @@ def link_line(o):
     return f'{_pick(LINK_EMOJIS)} <a href="{html.escape(o["url"], quote=True)}">Apri su {store}</a>'
 
 
+def hub_promo():
+    """Riga breve che porta all'Hub (vuota se HUB_PROMO = False in config.py)."""
+    if not getattr(config, "HUB_PROMO", True):
+        return ""
+    hub = config.HUB.get("channel", "")
+    if not hub:
+        return ""
+    tpl, label = _pick(getattr(config, "HUB_PROMO_LINES", HUB_PROMO_LINES))
+    return tpl.format(a=channel_link(hub, label))
+
+
 def format_offer(o, niche, for_hub=False):
-    """Stesso formato per tutte le fonti (CSV, API Amazon, eBay)."""
-    e = html.escape
+    """Stesso formato per tutte le fonti (CSV, API Amazon, eBay).
+    for_hub=True: copia inoltrata sull'Hub (o sul canale Lampo)."""
+    e = lambda x: html.escape(x, quote=False)   # gli apostrofi restano apostrofi
     title = short_title(o["title"])
     d = o.get("discount") or 0
     hot = d >= 35
@@ -241,6 +264,10 @@ def format_offer(o, niche, for_hub=False):
         lines += ["", link_line(o)]                             # aria prima del link
     if for_hub:
         lines += ["", f"📢 Altre offerte: {channel_link(niche['channel'], niche['name'])}"]
+    else:
+        promo = hub_promo()                                     # nei canali tematici: rimando all'Hub
+        if promo:
+            lines += ["", promo]
 
     # una sola riga finale: data del prezzo (se c'è un prezzo) + avviso affiliato
     if o.get("price") and o.get("price_date"):
@@ -252,9 +279,12 @@ def format_offer(o, niche, for_hub=False):
 
 
 def expired_text(text, label):
-    """Aggiunge la riga di scadenza prima dell'avviso finale, lasciando il resto invariato."""
+    """Inserisce la riga di scadenza subito sotto "Apri su ...", prima del resto."""
     lines = text.split("\n")
-    if len(lines) >= 2 and lines[-2] == "":
+    for i, ln in enumerate(lines):
+        if "Apri su " in ln and "<a href" in ln:
+            return "\n".join(lines[:i + 1] + ["", label] + lines[i + 1:])
+    if len(lines) >= 2 and lines[-2] == "":                     # post vecchio formato: prima del footer
         return "\n".join(lines[:-2] + ["", label] + lines[-2:])
     return f"{text}\n\n{label}"
 
@@ -272,7 +302,7 @@ def build_markup(o, tag=""):
 
 
 def format_hub_pinned(site_url):
-    e = html.escape
+    e = lambda x: html.escape(x, quote=False)
     lines = [f"📌 <b>Benvenuto in {e(config.BRAND)}!</b>"]
     desc = getattr(config, "HUB_DESCRIPTION", "")
     if desc:
