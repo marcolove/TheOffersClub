@@ -1,5 +1,24 @@
 [
  {
+  "key": "amz:B07R4CNDRM",
+  "source": "amazon",
+  "origin": "csv",
+  "asin": "B07R4CNDRM",
+  "niche": "casa",
+  "title": "American Crew Matte Clay cera per capelli uomo 85g",
+  "url": "https://link.amazon/B03oaMwVv",
+  "image": "https://m.media-amazon.com/images/I/71hjO2pckBL._AC_SX522_.jpg",
+  "price": 8.99,
+  "old_price": 12.5,
+  "discount": 28,
+  "note": "Tenuta medio-alta e finish opaco",
+  "brand": "",
+  "manual_price": true,
+  "preview_url": "https://www.amazon.it/dp/B07R4CNDRM?tag=theoffersclub-21",
+  "price_date": "18/11",
+  "seen": "2026-11-18T13:52:44.114444+00:00"
+ },
+ {
   "key": "amz:B0BQCTF5BW",
   "source": "curated",
   "origin": "csv",
