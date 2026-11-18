@@ -1,43 +1,8 @@
 {
  "posted": {
-  "amz:B07R4CNDRM": "2026-11-18T08:08:32.446473+00:00",
-  "amz:B09GVHN99N": "2026-11-18T09:17:27.762488+00:00"
+
  },
  "hub_pin_id": 5,
  "live": {
-  "amz:B07R4CNDRM": {
-   "posted": "2026-11-18T08:08:32.446473+00:00",
-   "origin": "csv",
-   "asin": "B07R4CNDRM",
-   "price": 8.99,
-   "manual_price": true,
-   "image": "https://m.media-amazon.com/images/I/71hjO2pckBL._AC_SX522_.jpg",
-   "msgs": [
-    {
-     "chat": "@theoffersclub_home",
-     "id": 16,
-     "kind": "photo",
-     "text": "🧼 <b>American Crew Matte Clay cera per capelli uomo 85g</b>\n📌 Tenuta medio-alta e finish opaco\n\n💸 Ora a <b>8,99 €</b>, prima <s>12,50 €</s>\n📉 <b>-28%</b> · risparmi 3,51 €\n\n🔗 https://link.amazon/B03oaMwVv\n\n<i>Prezzo rilevato il 17/11 · link affiliato · può cambiare</i>",
-     "markup": ""
-    }
-   ]
-  },
-  "amz:B09GVHN99N": {
-   "posted": "2026-11-18T09:17:27.762488+00:00",
-   "origin": "csv",
-   "asin": "B09GVHN99N",
-   "price": 14.99,
-   "manual_price": true,
-   "image": "https://m.media-amazon.com/images/I/71cdMWRbeWL._AC_SY300_SX300_QL70_ML2_.jpg",
-   "msgs": [
-    {
-     "chat": "@theoffersclub_casa",
-     "id": 17,
-     "kind": "photo",
-     "text": "☕ <b>Alpro Protein 50g bevanda alla soia gusto cioccolato 8x1L</b>\n✅ Vegetale e ad alto contenuto proteico\n\n💰 <b>14,99 €</b> anziché <s>19,90 €</s>\n🤑 <b>-25%</b>, risparmi 4,91 €\n\n🔎 https://link.amazon/B069pulIU\n\n<i>Prezzo del 17/11 · #affiliato · verifica sulla pagina</i>",
-     "markup": ""
-    }
-   ]
-  }
  }
 }
