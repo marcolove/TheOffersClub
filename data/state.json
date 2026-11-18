@@ -1,7 +1,8 @@
 {
  "posted": {
   "amz:B07R4CNDRM": "2026-11-18T12:37:40.516526+00:00",
-  "amz:B09GVHN99N": "2026-11-18T12:52:30.621679+00:00"
+  "amz:B09GVHN99N": "2026-11-18T12:52:30.621679+00:00",
+  "amz:B0F22BB4BV": "2026-11-18T13:11:35.901404+00:00"
  },
  "hub_pin_id": 5,
  "live": {
@@ -35,6 +36,23 @@
      "id": 26,
      "kind": "photo",
      "text": "Nuovo arrivo nel club\n🍳 <b>Alpro Protein 50g bevanda alla soia gusto cioccolato 8x1L</b>\n💡 Vegetale e ad alto contenuto proteico\n\n💸 <b>A 14,99 €</b> invece di <s>19,90 €</s>\n📉 Risparmi 4,91 € (<b>-25%</b>)\n\n🛒 <a href=\"https://link.amazon/B069pulIU\">Apri su Amazon</a>\n\n🗂️ Tutte le categorie in un posto solo: <a href=\"https://t.me/theoffersclub_hub\">apri l'Hub</a>\n\n<i>Prezzo del 18/11 · #affiliato · verifica sulla pagina</i>",
+     "markup": ""
+    }
+   ]
+  },
+  "amz:B0F22BB4BV": {
+   "posted": "2026-11-18T13:11:35.901404+00:00",
+   "origin": "csv",
+   "asin": "B0F22BB4BV",
+   "price": 17.94,
+   "manual_price": true,
+   "image": "https://m.media-amazon.com/images/I/717jA4SIMqL._AC_SX522_.jpg",
+   "msgs": [
+    {
+     "chat": "@theoffersclub_casa",
+     "id": 27,
+     "kind": "photo",
+     "text": "Per chi lo cercava\n🧺 <b>Breeze Men Dry Protection deodorante squeeze 6x100ml</b>\n⭐ Confezione da 6 per fare scorta\n\n💶 <b>17,94 €</b> anziché <s>23,40 €</s>\n🤑 <b>-23%</b>, risparmi 5,46 €\n\n🔎 <a href=\"https://link.amazon/B06GAAyxt\">Apri su Amazon</a>\n\n📢 Il club ha anche altri canali: <a href=\"https://t.me/theoffersclub_hub\">scoprili tutti</a>\n\n<i>Prezzo del 18/11 · può variare · link affiliato Amazon</i>",
      "markup": ""
     }
    ]
