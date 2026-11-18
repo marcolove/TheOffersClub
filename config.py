@@ -29,7 +29,7 @@ MAX_POSTS_PER_NICHE_PER_RUN = 1              # ...a (numero casuale)
 REPOST_AFTER_DAYS = 10                       # non ripubblicare lo stesso prodotto prima di N giorni
 MIN_DISCOUNT = 15                            # sconto minimo % per le offerte con prezzo
 MIN_SAVING_VALUE = 5                         # risparmio minimo in euro (-1 = disattivato)
-HUB_MIN_DISCOUNT = 40                        # sconto minimo per finire anche nel canale HUB
+HUB_MIN_DISCOUNT = 101                        # sconto minimo per finire anche nel canale HUB
 LAMPO_MIN_DISCOUNT = 60                      # sconto minimo per il canale LAMPO (se attivo)
 PRICE_MAX_AGE_HOURS = 24                     # i prezzi Amazon API non si mostrano sul sito oltre N ore
 PRIME_BUTTON = True                          # bottone "Prova Prime gratis" sotto i post Amazon
