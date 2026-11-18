@@ -54,10 +54,37 @@ NICHES = {
         "slug": "offerte-tecnologia",
         "seo_title": "Offerte tecnologia e gaming di oggi",
         "seo_intro": "Le migliori offerte del giorno su PC, monitor, SSD, cuffie, smartphone e console, aggiornate automaticamente più volte al giorno.",
-        "amazon_search_index": "Electronics",
-        "keywords": ["ssd", "monitor", "cuffie bluetooth", "mouse gaming", "tastiera meccanica",
-                     "smartwatch", "powerbank", "router wifi", "chiavetta usb", "webcam"],
-        "ebay_queries": ["ssd nvme", "monitor 27", "cuffie bluetooth"],
+        "amazon_search_index": "All",
+        "keywords": [
+            # PC e componenti
+            "notebook", "laptop gaming", "mini pc", "pc desktop", "monitor 27 pollici",
+            "monitor gaming 144hz", "ssd nvme 1tb", "ssd esterno", "hard disk esterno",
+            "memoria ram ddr5", "scheda video", "alimentatore pc", "case pc", "dissipatore cpu",
+            # Periferiche
+            "mouse gaming", "mouse wireless", "tastiera meccanica", "tastiera wireless",
+            "webcam", "microfono usb", "tappetino mouse xxl", "docking station usb c",
+            "hub usb c", "stampante multifunzione", "stampante 3d",
+            # Audio
+            "cuffie bluetooth", "cuffie noise cancelling", "auricolari true wireless",
+            "cuffie gaming", "soundbar", "cassa bluetooth", "giradischi",
+            # Smartphone e tablet
+            "smartphone", "tablet", "ebook reader", "caricatore usb c gan", "powerbank",
+            "cavo usb c", "caricatore wireless", "cover smartphone", "pellicola vetro temperato",
+            # Smart home e rete
+            "router wifi 6", "mesh wifi", "ripetitore wifi", "videocamera sorveglianza wifi",
+            "videocitofono smart", "lampadina smart", "presa smart", "termostato smart",
+            "echo dot", "fire tv stick", "chromecast",
+            # Wearable e foto
+            "smartwatch", "smartband", "action cam", "fotocamera mirrorless", "drone",
+            "scheda microsd", "chiavetta usb",
+            # Gaming
+            "console", "controller wireless", "nintendo switch", "ps5", "xbox series",
+            "sedia gaming", "visore vr",
+            # TV
+            "smart tv 55 pollici", "proiettore", "supporto tv da parete",
+        ],
+        "ebay_queries": ["ssd nvme", "monitor 27", "cuffie bluetooth", "smartwatch",
+                         "notebook", "router wifi"],
     },
     "casa": {
         "name": "Casa & Cucina",
@@ -66,10 +93,39 @@ NICHES = {
         "slug": "offerte-casa-cucina",
         "seo_title": "Offerte casa e cucina di oggi",
         "seo_intro": "Friggitrici ad aria, robot aspirapolvere, macchine da caffè e tutto per la casa in sconto, selezionati ogni giorno.",
-        "amazon_search_index": "HomeAndKitchen",
-        "keywords": ["friggitrice ad aria", "robot aspirapolvere", "macchina caffè", "frullatore",
-                     "set pentole", "aspirapolvere senza fili", "deumidificatore", "bilancia cucina"],
-        "ebay_queries": ["friggitrice ad aria", "robot aspirapolvere"],
+        "amazon_search_index": "All",
+        "keywords": [
+            # Piccoli elettrodomestici cucina
+            "friggitrice ad aria", "macchina caffè espresso", "macchina caffè capsule",
+            "macchina caffè automatica", "montalatte", "bollitore elettrico", "tostapane",
+            "frullatore", "frullatore a immersione", "robot da cucina", "planetaria",
+            "impastatrice", "sbattitore elettrico", "estrattore di succo", "centrifuga",
+            "macchina sottovuoto", "macchina del pane", "piastra per waffle", "griglia elettrica",
+            "forno microonde", "fornetto elettrico", "pentola a pressione", "multicooker",
+            "yogurtiera", "macinacaffè",
+            # Pentole e accessori
+            "set pentole antiaderenti", "padella antiaderente", "set coltelli cucina",
+            "tagliere", "contenitori ermetici", "bilancia da cucina", "borraccia termica",
+            "set piatti", "bicchieri vetro",
+            # Pulizia
+            "robot aspirapolvere", "aspirapolvere senza fili", "aspirapolvere senza sacco",
+            "lavapavimenti", "scopa elettrica", "pulitore a vapore", "lavavetri elettrico",
+            "aspirabriciole",
+            # Clima e aria
+            "deumidificatore", "purificatore d'aria", "condizionatore portatile",
+            "ventilatore a colonna", "stufetta elettrica", "termoventilatore", "umidificatore",
+            # Bucato e stiro
+            "ferro da stiro a vapore", "ferro con caldaia", "stiratore verticale",
+            "asciugatrice", "stendibiancheria",
+            # Arredo e comfort
+            "materasso memory", "cuscino memory", "set lenzuola", "piumone", "coperta",
+            "tende oscuranti", "lampada da terra", "luci led striscia", "organizer armadio",
+            # Consumabili (si vendono molto)
+            "detersivo lavatrice", "capsule lavastoviglie", "ammorbidente", "carta igienica",
+            "sacchetti spazzatura", "capsule caffè", "cialde caffè",
+        ],
+        "ebay_queries": ["friggitrice ad aria", "robot aspirapolvere", "macchina caffè",
+                         "aspirapolvere senza fili", "set pentole"],
     },
     "utensili": {
         "name": "Utensili & Fai da te",
@@ -77,23 +133,48 @@ NICHES = {
         "channel": "@theoffersclub_Utensili",
         "slug": "offerte-utensili-fai-da-te",
         "seo_title": "Offerte utensili e fai da te di oggi",
-        "seo_intro": "Avvitatori, trapani, smerigliatrici, set di attrezzi e giardinaggio di Bosch, Makita, Einhell, DeWalt e altri marchi, in sconto oggi.",
-        "amazon_search_index": "Tools",
-        "keywords": ["avvitatore batteria", "trapano percussione", "smerigliatrice", "set cacciaviti",
-                     "cassetta attrezzi", "idropulitrice", "compressore", "levigatrice",
-                     "bosch professional", "makita", "einhell", "dewalt"],
-        "ebay_queries": ["avvitatore batteria", "set attrezzi"],
+        "seo_intro": "Avvitatori, trapani, saldatrici, smerigliatrici, set di attrezzi e giardinaggio di Bosch, Makita, Einhell, DeWalt e altri marchi, in sconto oggi.",
+        "amazon_search_index": "All",
+        "keywords": [
+            # Elettroutensili
+            "avvitatore a batteria", "trapano avvitatore", "trapano a percussione",
+            "tassellatore", "martello demolitore", "avvitatore a impulsi",
+            "chiave a impulsi", "smerigliatrice angolare", "levigatrice orbitale",
+            "levigatrice roto orbitale", "pialla elettrica", "fresatrice",
+            "multiutensile oscillante", "utensile multifunzione", "sega circolare",
+            "seghetto alternativo", "sega a gattuccio", "troncatrice", "sega da banco",
+            "pistola termica", "pistola colla a caldo", "pistola per verniciare",
+            # Saldatura
+            "saldatrice inverter", "saldatrice a filo continuo", "saldatrice mig",
+            "saldatrice tig", "saldatore a stagno", "stazione saldante",
+            "maschera per saldatura", "saldatrice ad elettrodo",
+            # Compressori, idropulitrici, aspiratori
+            "compressore", "compressore portatile", "compressore auto", "idropulitrice",
+            "aspiratore solidi liquidi", "bidone aspiratutto",
+            # Misura e laser
+            "livella laser", "metro laser", "rilevatore di metalli", "multimetro digitale",
+            "tester elettrico",
+            # Attrezzi manuali
+            "set cacciaviti", "set chiavi a bussola", "chiave dinamometrica",
+            "set chiavi combinate", "pinze", "cassetta attrezzi", "carrello porta attrezzi",
+            "valigetta attrezzi", "morsa da banco", "banco da lavoro", "set punte trapano",
+            "set inserti avvitatore", "dischi smerigliatrice", "lame sega circolare",
+            # Giardino
+            "tagliaerba a batteria", "decespugliatore", "tagliasiepi", "motosega",
+            "motosega a batteria", "soffiatore foglie", "robot tagliaerba", "biotrituratore",
+            "potatore telescopico", "tubo irrigazione", "pompa sommersa",
+            # Auto e officina
+            "avviatore emergenza auto", "caricabatterie auto", "cric idraulico",
+            "lucidatrice auto",
+            # Batterie e marchi (offerte su kit e batterie)
+            "batteria 18v", "kit batteria caricatore", "bosch professional", "bosch verde",
+            "makita", "dewalt", "einhell power x-change", "ryobi one+", "milwaukee",
+            "metabo", "stanley", "wera", "parkside",
+        ],
+        "ebay_queries": ["avvitatore batteria", "saldatrice inverter", "set attrezzi",
+                         "smerigliatrice", "idropulitrice", "tagliaerba batteria"],
     },
-    # Esempio di nicchia da attivare più avanti: togli il commento
-    # "bimbi": {
-    #     "name": "Bimbi & Giocattoli", "emoji": "🧸", "channel": "@theoffersclub_kids",
-    #     "slug": "offerte-giocattoli-bambini", "seo_title": "Offerte giocattoli e bambini di oggi",
-    #     "seo_intro": "LEGO, giochi, pannolini e articoli per l'infanzia in sconto.",
-    #     "amazon_search_index": "Toys", "keywords": ["lego", "pannolini", "gioco da tavolo"],
-    #     "ebay_queries": ["lego"],
-    # },
 }
-
 # Parole nel titolo che fanno aggiungere l'avviso "batteria non inclusa"
 NO_BATTERY_HINTS = ["senza batteria", "solo corpo", "body only", "batteria non inclusa", "tool only"]
 
