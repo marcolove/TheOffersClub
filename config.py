@@ -62,7 +62,7 @@ NICHES = {
     "casa": {
         "name": "Casa & Cucina",
         "emoji": "🏠",
-        "channel": "@theoffersclub_home",
+        "channel": "@theoffersclub_casa",
         "slug": "offerte-casa-cucina",
         "seo_title": "Offerte casa e cucina di oggi",
         "seo_intro": "Friggitrici ad aria, robot aspirapolvere, macchine da caffè e tutto per la casa in sconto, selezionati ogni giorno.",
@@ -74,7 +74,7 @@ NICHES = {
     "utensili": {
         "name": "Utensili & Fai da te",
         "emoji": "🔧",
-        "channel": "@theoffersclub_tools",
+        "channel": "@theoffersclub_Utensili",
         "slug": "offerte-utensili-fai-da-te",
         "seo_title": "Offerte utensili e fai da te di oggi",
         "seo_intro": "Avvitatori, trapani, smerigliatrici, set di attrezzi e giardinaggio di Bosch, Makita, Einhell, DeWalt e altri marchi, in sconto oggi.",
