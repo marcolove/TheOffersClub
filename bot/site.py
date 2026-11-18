@@ -46,7 +46,9 @@ def join_box(niche=None):
 
 
 def card(o):
-    img = f'<img loading="lazy" src="{e(o["image"])}" alt="{e(o["title"][:80])}">' if o.get("image") else ""
+    src = (o.get("image") or "").strip()
+    # solo indirizzi immagine validi (evita record vecchi tipo "8,99")
+    img = f'<img loading="lazy" src="{e(src)}" alt="{e(o["title"][:80])}">' if src.startswith("http") else ""
     price = ""
     if o.get("price"):
         price = f'<span class="p">{eur(o["price"])}</span>'
@@ -57,7 +59,7 @@ def card(o):
     seen = o.get("seen", "")[:16].replace("T", " ")
     note = f'<p class="n">{e(o["note"])}</p>' if o.get("note") else ""
     stamp = f'<p class="t">Prezzo rilevato il {seen} UTC, può essere cambiato</p>' if price else ""
-    if o.get("price_expired"):          # prezzo Amazon API più vecchio di 24 ore: non si mostra
+    if o.get("price_expired"):          # prezzo più vecchio del limite: non si mostra
         stamp = '<p class="t">Controlla il prezzo aggiornato su Amazon</p>'
     return (f'<article class="card">{img}<h3>{e(o["title"][:120])}</h3>{note}<p>{price}</p>{stamp}'
             f'<a class="btn" rel="sponsored nofollow" href="{e(o["url"])}">Vedi offerta</a></article>')
@@ -96,8 +98,32 @@ def write(path, content):
         f.write(content)
 
 
+def unique(history):
+    """Una sola card per prodotto: la più recente (history è già in ordine dal più nuovo)."""
+    seen, out = set(), []
+    for o in history:
+        k = o.get("key")
+        if not k or k in seen:
+            continue
+        seen.add(k)
+        out.append(o)
+    return out
+
+
+def guide_title(md, fallback):
+    """Primo titolo # o ## del file .md."""
+    for l in md.splitlines():
+        s = l.strip()
+        if s.startswith("# "):
+            return s[2:].strip()
+        if s.startswith("## "):
+            return s[3:].strip()
+    return fallback
+
+
 def build(history, site_url, tag=""):
     site_url = site_url.rstrip("/")
+    history = unique(history)
     if os.path.exists(OUT):
         shutil.rmtree(OUT)
     os.makedirs(OUT)
@@ -136,9 +162,9 @@ def build(history, site_url, tag=""):
             if not fn.endswith(".md"):
                 continue
             md = open(os.path.join(GUIDES, fn), encoding="utf-8").read().replace("{{TAG}}", tag)
-            title = next((l[2:].strip() for l in md.splitlines() if l.startswith("# ")), fn[:-3])
             slug = fn[:-3]
-            first_p = next((l.strip() for l in md.splitlines() if l.strip() and not l.startswith("#")), "")
+            title = guide_title(md, slug)
+            first_p = next((l.strip() for l in md.splitlines() if l.strip() and not l.strip().startswith("#")), "")
             body = md_to_html(md) + join_box()
             url = f"{site_url}/guide/{slug}/"
             write(os.path.join(OUT, "guide", slug, "index.html"),
