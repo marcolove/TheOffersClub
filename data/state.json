@@ -1,7 +1,32 @@
 {
  "posted": {
+  "amz:B0BQCTF5BW": "2026-11-18T14:52:38.549636+00:00"
  },
  "hub_pin_id": 10,
  "live": {
+  "amz:B0BQCTF5BW": {
+   "posted": "2026-11-18T14:52:38.549636+00:00",
+   "origin": "csv",
+   "asin": "B0BQCTF5BW",
+   "price": 8.99,
+   "manual_price": true,
+   "image": "https://m.media-amazon.com/images/I/812cOp1R64L._AC_SL1000_.jpg",
+   "msgs": [
+    {
+     "chat": "@theoffersclub_casa",
+     "id": 34,
+     "kind": "photo",
+     "text": "Ribasso forte!\n🍳 <b>American Crew Fiber</b>\n👉 Cera Capelli Uomo\n\n🏷️ <b>8,99 €</b> <s>17,00 €</s>\n📉 Risparmi 8,01 € (<b>-47%</b>)\n\n🔎 <a href=\"https://link.amazon/B07j2LSxD\">Apri su Amazon</a>\n\n📢 Il club ha anche altri canali: <a href=\"https://t.me/theoffersclub_hub\">scoprili tutti</a>\n\n<i>Prezzo del 18/11 · #affiliato · verifica sulla pagina</i>",
+     "markup": ""
+    },
+    {
+     "chat": "@theoffersclub_hub",
+     "id": 12,
+     "kind": "photo",
+     "text": "Questo vola via\n🤑 <b>American Crew Fiber</b>\n👉 Cera Capelli Uomo\n\n💸 Scende a <b>8,99 €</b> (era <s>17,00 €</s>)\n🤑 <b>-47%</b>, risparmi 8,01 €\n\n🛒 <a href=\"https://link.amazon/B07j2LSxD\">Apri su Amazon</a>\n\n📢 Altre offerte: <a href=\"https://t.me/theoffersclub_casa\">Casa &amp; Cucina</a>\n\n<i>Prezzo del 18/11 · #affiliato · verifica sulla pagina</i>",
+     "markup": ""
+    }
+   ]
+  }
  }
 }
