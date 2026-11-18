@@ -7,8 +7,11 @@ Preparazione delle immagini dei post.
  - Foto molto larga    -> taglia i lati, ma al massimo IMAGE_MAX_CROP; se non basta,
                           aggiunge bianco sopra e sotto (il prodotto non viene mai deformato).
  - Versione "offerta terminata": grigia con la scritta TERMINATA.
+ - Gli indirizzi immagine di Amazon con parametri strani (AVIF, "FMavif", "PQ60", ecc.)
+   vengono ripuliti automaticamente: si prova prima la foto originale .jpg.
 """
 import io
+import re
 
 import requests
 from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageOps
@@ -19,23 +22,57 @@ RATIO = getattr(config, "IMAGE_RATIO", 16 / 9)          # larghezza / altezza
 MAX_CROP = getattr(config, "IMAGE_MAX_CROP", 0.20)      # quota massima di larghezza tagliabile
 WIDTH = getattr(config, "IMAGE_WIDTH", 1280)            # larghezza finale in pixel
 MARGIN = getattr(config, "IMAGE_MARGIN", 0.06)          # bordo bianco intorno al prodotto
-UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "Accept": "image/jpeg,image/png,image/webp;q=0.9,*/*;q=0.5"}   # niente AVIF
 WHITE = (255, 255, 255)
 
 _cache = {}
+_AMZ = re.compile(r"^(https?://(?:m\.media-amazon\.com|images-[a-z]+\.ssl-images-amazon\.com|"
+                  r"[a-z0-9-]+\.media-amazon\.com)/images/I/[A-Za-z0-9%+\-]+)\.[^/]*$")
+
+
+def candidates(url):
+    """Indirizzi da provare, in ordine. Per le immagini Amazon: foto originale, poi versione
+    1000 px, poi l'indirizzo com'è. Per gli altri siti: solo l'indirizzo com'è."""
+    url = (url or "").strip().split("?")[0] if "media-amazon" in (url or "") else (url or "").strip()
+    m = _AMZ.match(url)
+    if not m:
+        return [url] if url else []
+    base = m.group(1)
+    out = [f"{base}.jpg", f"{base}._AC_SL1000_.jpg"]
+    if url not in out:
+        out.append(url)
+    return out
+
+
+def clean_url(url):
+    """Primo indirizzo consigliato (per mostrarlo/salvarlo)."""
+    c = candidates(url)
+    return c[0] if c else ""
+
+
+def _open(content):
+    img = Image.open(io.BytesIO(content))
+    img.load()
+    return img
 
 
 def download(url):
     if url in _cache:
         return _cache[url]
-    try:
-        r = requests.get(url, headers=UA, timeout=30)
-        r.raise_for_status()
-        img = Image.open(io.BytesIO(r.content))
-        img.load()
-    except Exception as e:
-        print(f"  [immagini] download non riuscito: {e}")
-        img = None
+    img = None
+    for cand in candidates(url):
+        try:
+            r = requests.get(cand, headers=UA, timeout=30)
+            r.raise_for_status()
+            if len(r.content) < 1000:
+                raise ValueError("immagine vuota")
+            img = _open(r.content)
+            break
+        except Exception as e:
+            print(f"  [immagini] {cand[-60:]}: {e}")
+    if img is None:
+        print("  [immagini] nessun indirizzo ha funzionato")
     _cache[url] = img
     return img
 
