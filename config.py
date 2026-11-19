@@ -130,8 +130,23 @@ NICHES = {
             "materasso memory", "cuscino memory", "set lenzuola", "piumone", "coperta",
             "tende oscuranti", "lampada da terra", "luci led striscia", "organizer armadio",
             # Consumabili (si vendono molto)
-            "detersivo lavatrice", "capsule lavastoviglie", "ammorbidente",
-            "capsule caffè", "cialde caffè",
+            # Bucato
+            "detersivo lavatrice", "detersivo lavatrice liquido", "capsule lavatrice",
+            "ammorbidente", "smacchiatore bucato", "additivo igienizzante bucato",
+            "fogli acchiappacolore", "anticalcare lavatrice",
+            # Lavastoviglie e piatti
+            "capsule lavastoviglie", "pastiglie lavastoviglie", "brillantante lavastoviglie",
+            "sale lavastoviglie", "detersivo piatti", "pulitore lavastoviglie",
+            # Pulizia casa
+            "detergente pavimenti", "sgrassatore", "anticalcare spray", "candeggina",
+            "disinfettante superfici", "salviette igienizzanti", "spugne cucina",
+            # Carta e casa
+            "carta igienica", "rotoli carta cucina", "fazzoletti di carta",
+            "sacchetti spazzatura", "pellicola alimentare", "carta forno", "alluminio alimentare",
+            # Caffè e bevande
+            "capsule caffè", "cialde caffè", "caffè in grani", "caffè macinato",
+            "capsule nespresso compatibili", "capsule dolce gusto compatibili",
+            "tè in bustine", "acqua frizzante bottiglie",
         ],
         "ebay_queries": ["friggitrice ad aria", "robot aspirapolvere", "macchina caffè",
                          "aspirapolvere senza fili", "set pentole"],
