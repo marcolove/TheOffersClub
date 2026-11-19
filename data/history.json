@@ -141,15 +141,16 @@
   "title": "Alpro Protein 50g bevanda alla soia gusto cioccolato 8x1L",
   "url": "https://link.amazon/B069pulIU",
   "image": "https://m.media-amazon.com/images/I/71cdMWRbeWL._AC_SY300_SX300_QL70_ML2_.jpg",
-  "price": 14.99,
-  "old_price": 19.9,
-  "discount": 25,
+  "price": null,
+  "old_price": null,
+  "discount": null,
   "note": "Vegetale e ad alto contenuto proteico",
   "brand": "",
   "manual_price": true,
   "preview_url": "https://www.amazon.it/dp/B09GVHN99N?tag=theoffersclub-21",
   "price_date": "18/11",
-  "seen": "2026-11-18T13:56:25.239858+00:00"
+  "seen": "2026-11-18T13:56:25.239858+00:00",
+  "price_expired": true
  },
  {
   "key": "amz:B07R4CNDRM",
