@@ -32,12 +32,14 @@ class Telegram:
                 j = r.json()
             except Exception as e:                   # rete o risposta non valida: riprova
                 print(f"  [telegram] {method}: {e}")
+                self.last_error = f"rete: {e}"
                 time.sleep(3)
                 continue
             if j.get("ok"):
                 time.sleep(1.2)                       # rispetta i limiti di Telegram
                 return j["result"] if isinstance(j["result"], dict) else {"ok": True}
             if j.get("error_code") == 429:            # troppi messaggi: aspetta
+                self.last_error = "429"
                 time.sleep(j.get("parameters", {}).get("retry_after", 5) + 1)
                 continue
             self.last_error = j.get("description", "")
@@ -99,19 +101,47 @@ class Telegram:
         gone = any(s in self.last_error for s in ("message is not modified", "message to edit not found"))
         return bool(res) or gone
 
+    # ------------------------------------------------------------------ messaggio fissato Hub
+    def current_pinned_id(self, chat_id):
+        """ID del messaggio attualmente fissato nel canale (None se non c'è o in caso di errore)."""
+        res = self.call("getChat", chat_id=chat_id)
+        if res and isinstance(res.get("pinned_message"), dict):
+            return res["pinned_message"].get("message_id")
+        return None
+
     def upsert_pinned(self, chat_id, text, message_id=None):
-        """Aggiorna il messaggio fissato dell'hub; se non esiste lo crea e lo fissa."""
-        if message_id:
-            res = self.call("editMessageText", chat_id=chat_id, message_id=message_id, text=text,
-                            parse_mode="HTML", disable_web_page_preview="true")
-            # "message is not modified" = testo identico: va bene, non ricrearlo
-            if res or self.dry or "message is not modified" in self.last_error:
-                return message_id
+        """Aggiorna il messaggio fissato dell'Hub MODIFICANDOLO. Non ne manda mai uno nuovo,
+        tranne il caso in cui nel canale non ci sia proprio nessun messaggio fissato.
+
+        Ordine:
+        1) ID impostato a mano in config.py (HUB_PIN_ID), se presente;
+        2) messaggio fissato attualmente nel canale (letto da Telegram);
+        3) ID salvato in state.json.
+        Se la modifica fallisce (rete, limiti, ecc.) non fa nulla: riproverà al giro dopo."""
+        if self.dry:
+            return message_id
+
+        fixed = getattr(config, "HUB_PIN_ID", None)
+        pinned_now = self.current_pinned_id(chat_id)
+        if pinned_now is None and self.last_error:      # getChat fallito: non rischiare doppioni
+            print(f"  [telegram] messaggio fissato non verificabile ({self.last_error}): salto")
+            return message_id
+
+        target = fixed or pinned_now or message_id
+        if target:
+            self.call("editMessageText", chat_id=chat_id, message_id=target, text=text,
+                      parse_mode="HTML", disable_web_page_preview="true")
+            if self.last_error and "message is not modified" not in self.last_error:
+                print(f"  [telegram] messaggio fissato non aggiornato: {self.last_error}")
+            return target                                # in ogni caso: MAI un nuovo messaggio
+
+        # Nessun messaggio fissato nel canale e nessun ID noto: lo crea una sola volta
         res = self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
                         disable_web_page_preview="true")
         if res and res.get("message_id"):
             self.call("pinChatMessage", chat_id=chat_id, message_id=res["message_id"],
                       disable_notification="true")
+            print(f"  [telegram] creato messaggio fissato Hub (id {res['message_id']})")
             return res["message_id"]
         return message_id
 
@@ -157,6 +187,7 @@ PRICE_TEMPLATES = [
     "{e} <b>{p}</b> <s>{o}</s>",
     "{e} Scende a <b>{p}</b> (era <s>{o}</s>)",
 ]
+
 # Riga sconto + risparmio: compare SEMPRE quando c'è uno sconto. {d}=%, {s}=euro risparmiati
 SAVING_TEMPLATES = [
     "📉 <b>-{d}%</b> · risparmi {s}",
@@ -192,6 +223,7 @@ HUB_PROMO_LINES = [
 # Riga del link: il testo è sempre "Apri su Amazon" (o eBay) e il link è nascosto dietro.
 # Cambia solo l'emoji davanti.
 LINK_EMOJIS = ["👉", "🛒", "🔎", "🛍️"]
+
 CTA_BUTTONS = ["🛒 Vedi su {s}", "👉 Vai all'offerta", "🔎 Scopri su {s}", "🛍️ Apri su {s}", "🛒 Vedi l'offerta"]
 
 
@@ -249,7 +281,6 @@ def format_offer(o, niche, for_hub=False):
     low = o["title"].lower()
     if niche.get("name", "").startswith("Utensili") and any(h in low for h in config.NO_BATTERY_HINTS):
         lines.append("⚠️ Batteria e caricatore NON inclusi")
-
     if o.get("price"):
         lines.append("")                                        # aria prima del prezzo
         pe = _pick(PRICE_EMOJIS)
@@ -259,7 +290,6 @@ def format_offer(o, niche, for_hub=False):
                 lines.append(_pick(SAVING_TEMPLATES).format(d=d, s=eur(o["old_price"] - o["price"])))
         else:
             lines.append(f"{pe} <b>{eur(o['price'])}</b>")
-
     if getattr(config, "POST_STYLE", "testo") == "testo":
         lines += ["", link_line(o)]                             # aria prima del link
     if for_hub:
@@ -268,7 +298,6 @@ def format_offer(o, niche, for_hub=False):
         promo = hub_promo()                                     # nei canali tematici: rimando all'Hub
         if promo:
             lines += ["", promo]
-
     # una sola riga finale: data del prezzo (se c'è un prezzo) + avviso affiliato
     if o.get("price") and o.get("price_date"):
         foot = _pick(DISCLOSURES_DATED).format(dt=o["price_date"])
