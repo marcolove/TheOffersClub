@@ -6,23 +6,5 @@
   "amz:B0F22BB4BV": "2026-11-18T15:41:39.230880+00:00"
  },
  "hub_pin_id": 10,
- "live": {
-  "amz:B0F22BB4BV": {
-   "posted": "2026-11-18T15:41:39.230880+00:00",
-   "origin": "csv",
-   "asin": "B0F22BB4BV",
-   "price": 17.94,
-   "manual_price": true,
-   "image": "https://m.media-amazon.com/images/I/717jA4SIMqL._AC_SX522_.jpg",
-   "msgs": [
-    {
-     "chat": "@theoffersclub_casa",
-     "id": 37,
-     "kind": "photo",
-     "text": "Per chi lo cercava\n🧺 <b>Breeze Men Dry Protection deodorante squeeze 6x100ml</b>\n⭐ Confezione da 6 per fare scorta\n\n💰 <b>A 17,94 €</b> invece di <s>23,40 €</s>\n🔻 Sconto <b>23%</b> · 5,46 € in meno\n\n🔎 <a href=\"https://link.amazon/B06GAAyxt\">Apri su Amazon</a>\n\n🗂️ Tutte le categorie in un posto solo: <a href=\"https://t.me/theoffersclub_hub\">apri l'Hub</a>\n\n<i>Prezzo rilevato il 18/11 · link affiliato · può cambiare</i>",
-     "markup": ""
-    }
-   ]
-  }
- }
+ "live": {}
 }
