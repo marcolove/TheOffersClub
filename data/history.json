@@ -122,15 +122,16 @@
   "title": "Breeze Men Dry Protection deodorante squeeze 6x100ml",
   "url": "https://link.amazon/B06GAAyxt",
   "image": "https://m.media-amazon.com/images/I/717jA4SIMqL._AC_SX522_.jpg",
-  "price": 17.94,
-  "old_price": 23.4,
-  "discount": 23,
+  "price": null,
+  "old_price": null,
+  "discount": null,
   "note": "Confezione da 6 per fare scorta",
   "brand": "",
   "manual_price": true,
   "preview_url": "https://www.amazon.it/dp/B0F22BB4BV?tag=theoffersclub-21",
   "price_date": "18/11",
-  "seen": "2026-11-18T14:11:14.546975+00:00"
+  "seen": "2026-11-18T14:11:14.546975+00:00",
+  "price_expired": true
  },
  {
   "key": "amz:B09GVHN99N",
