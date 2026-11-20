@@ -3,53 +3,48 @@ CONFIGURAZIONE PRINCIPALE
 Modifica solo questo file per cambiare nomi, canali, nicchie, orari e parole chiave.
 I dati sensibili (token, chiavi) NON vanno qui: vanno nei Secrets di GitHub.
 """
-
 BRAND = "TheOffersClub"                      # nome del brand (usato su sito e post)
 SITE_TITLE = "TheOffersClub – Le migliori offerte del giorno"
-SITE_DESCRIPTION = ("Offerte Amazon selezionate ogni giorno su tecnologia, casa, "
-                    "utensili e fai da te. Iscriviti ai canali Telegram gratuiti.")
+SITE_DESCRIPTION = ("Offerte Amazon selezionate ogni giorno su tecnologia, casa e cucina, "
+                    "utensili e cura della persona. Iscriviti ai canali Telegram gratuiti.")
 TELEGRAM_FOLDER_LINK = ""                    # es. "https://t.me/addlist/XXXX" (cartella con tutti i canali)
 WHATSAPP_CHANNEL_LINK = ""                   # es. "https://whatsapp.com/channel/XXXX" (facoltativo)
-
-# ------------------------------------------------------------------ Messaggio fissato dell'Hub
-# Breve descrizione mostrata sotto il titolo di benvenuto
-HUB_DESCRIPTION = ("Ogni giorno selezioniamo le offerte più interessanti, divise per categoria. "
-                   "Iscriviti solo ai canali che ti interessano: niente spam, solo sconti utili.")
+# ------------------------------------------------------------------ Messaggio fissato del General
+HUB_DESCRIPTION = ("Qui trovi le offerte migliori di ogni categoria, con sconti dal 25% in su. "
+                   "Vuoi tutte le offerte di un tema? Iscriviti al canale che ti interessa.")
 SHOW_SITE_IN_PINNED = False                  # True per mostrare il link al sito nel messaggio fissato
-
 # ------------------------------------------------------------------ Orari (ora italiana)
 # Il bot pubblica solo tra MIN_HOUR e MAX_HOUR compresi (es. 8 e 22 = dalle 8:00 alle 22:59).
-# Il sito si aggiorna comunque a ogni giro.
 MIN_HOUR = 8
 MAX_HOUR = 22
-
 # ------------------------------------------------------------------ Quantità e filtri
-MIN_POSTS_PER_NICHE_PER_RUN = 1              # post per nicchia a ogni giro: da...
+# Con un giro ogni 30 minuti (cron-job.org) e 0-1 post per canale a giro:
+# circa 10-15 post al giorno per canale tematico; nel General solo quelli con sconto >= HUB_MIN_DISCOUNT.
+MIN_POSTS_PER_NICHE_PER_RUN = 0              # post per canale a ogni giro: da...
 MAX_POSTS_PER_NICHE_PER_RUN = 1              # ...a (numero casuale)
 REPOST_AFTER_DAYS = 10                       # non ripubblicare lo stesso prodotto prima di N giorni
-MIN_DISCOUNT = 15                            # sconto minimo % per le offerte con prezzo
+MIN_DISCOUNT = 15                            # sconto minimo % nei canali tematici
 MIN_SAVING_VALUE = 5                         # risparmio minimo in euro (-1 = disattivato)
-HUB_MIN_DISCOUNT = 101                       # 101 = nessuna offerta inoltrata sull'Hub
-LAMPO_MIN_DISCOUNT = 60                      # sconto minimo per il canale LAMPO (se attivo)
+HUB_MIN_DISCOUNT = 25                        # sconto minimo % per uscire anche nel General
+LAMPO_MIN_DISCOUNT = 60                      # non usato (canale Lampo chiuso)
 PRICE_MAX_AGE_HOURS = 24                     # i prezzi Amazon API non si mostrano sul sito oltre N ore
+EXPIRE_AUTO_HOURS = 0                        # 0 = i post del CSV non scadono mai da soli
+TRACK_DAYS = 3                               # giorni in cui il bot ricontrolla i post via API
+AMAZON_SEARCHES_PER_ROUND = 3                # ricerche Creators API per giro (limite richieste)
 PRIME_BUTTON = True                          # bottone "Prova Prime gratis" (solo con POST_STYLE = "bottoni")
 SITE_OFFERS_PER_PAGE = 60                    # offerte per pagina del sito
-
 # Filtro "prodotti veri" (solo offerte automatiche da API Amazon / eBay, non il CSV):
 # per ogni nicchia "min_price" = prezzo minimo in euro, "exclude_words" = parole che, se
 # compaiono nel titolo, fanno scartare il prodotto (ricambi, accessori). L'elenco generale
 # (ricambio, compatibile con, adatto per, cover per, pellicola, usato...) è già nel bot.
-
 HUB = {
-    "channel": "@theoffersclub_hub",         # canale principale
-    "name": "Hub TheOffersClub",
+    "channel": "@theoffersclub_hub",         # canale General (offerte dal 25% in su)
+    "name": "TheOffersClub – Le migliori offerte",
 }
-
 LAMPO = {
-    "enabled": False,                        # metti True quando apri il canale
+    "enabled": False,                        # canale chiuso: gli sconti top escono nel General con 🔥
     "channel": "@theoffersclub_lampo",
 }
-
 # Le nicchie: una = un canale Telegram + una pagina del sito
 NICHES = {
     "tech": {
@@ -58,7 +53,7 @@ NICHES = {
         "channel": "@TheOffersClub_Tech",
         "slug": "offerte-tecnologia",
         "seo_title": "Offerte tecnologia e gaming di oggi",
-        "seo_intro": "Le migliori offerte del giorno su PC, monitor, SSD, cuffie, smartphone e console, aggiornate automaticamente più volte al giorno.",
+        "seo_intro": "Le migliori offerte del giorno su PC, monitor, SSD, cuffie, smartphone, smart home e console, aggiornate più volte al giorno.",
         "amazon_search_index": "All",
         "min_price": 10,
         "exclude_words": ["cavo usb", "cavo hdmi", "cavo di ricarica", "cavi usb", "custodia",
@@ -99,7 +94,7 @@ NICHES = {
         "channel": "@theoffersclub_casa",
         "slug": "offerte-casa-cucina",
         "seo_title": "Offerte casa e cucina di oggi",
-        "seo_intro": "Friggitrici ad aria, robot aspirapolvere, macchine da caffè e tutto per la casa in sconto, selezionati ogni giorno.",
+        "seo_intro": "Friggitrici ad aria, robot aspirapolvere, macchine da caffè, pulizia e scorte per la casa in sconto, selezionati ogni giorno.",
         "amazon_search_index": "All",
         "min_price": 10,
         "exclude_words": ["sacchetti per", "spazzole", "panni", "mop di ricambio", "testine"],
@@ -146,7 +141,9 @@ NICHES = {
             # Caffè e bevande
             "capsule caffè", "cialde caffè", "caffè in grani", "caffè macinato",
             "capsule nespresso compatibili", "capsule dolce gusto compatibili",
-            "tè in bustine", "acqua frizzante bottiglie",
+            "tè in bustine",
+            # Filtri e pile
+            "filtri caraffa", "filtri acqua frigorifero", "pile alcaline", "pile ricaricabili",
         ],
         "ebay_queries": ["friggitrice ad aria", "robot aspirapolvere", "macchina caffè",
                          "aspirapolvere senza fili", "set pentole"],
@@ -157,7 +154,7 @@ NICHES = {
         "channel": "@theoffersclub_Utensili",
         "slug": "offerte-utensili-fai-da-te",
         "seo_title": "Offerte utensili e fai da te di oggi",
-        "seo_intro": "Avvitatori, trapani, saldatrici, smerigliatrici, set di attrezzi e giardinaggio di Bosch, Makita, Einhell, DeWalt e altri marchi, in sconto oggi.",
+        "seo_intro": "Avvitatori, trapani, saldatrici, smerigliatrici, set di attrezzi, giardino e auto di Bosch, Makita, Einhell, DeWalt e altri marchi, in sconto oggi.",
         "amazon_search_index": "All",
         "min_price": 15,
         "exclude_words": ["set di dischi", "set dischi", "dischi da taglio", "dischi abrasivi",
@@ -202,10 +199,40 @@ NICHES = {
         "ebay_queries": ["avvitatore batteria", "saldatrice inverter", "set attrezzi",
                          "smerigliatrice", "idropulitrice", "tagliaerba batteria"],
     },
+    "persona": {
+        "name": "Cura Persona & Salute",
+        "emoji": "🧴",
+        "emojis": ["🧴", "🪒", "💆", "🦷", "💄", "🧼", "💪", "🌿", "✨", "🩺"],
+        "channel": "@theoffersclub_persona",   # crea il canale con questo username
+        "slug": "offerte-cura-persona",
+        "seo_title": "Offerte cura della persona e salute di oggi",
+        "seo_intro": "Rasoi, regolabarba, spazzolini elettrici, asciugacapelli, profumi, skincare e integratori in sconto, selezionati ogni giorno.",
+        "amazon_search_index": "All",
+        "min_price": 10,
+        "exclude_words": ["testine", "lame di ricambio", "beccucci", "campione", "tester"],
+        "keywords": [
+            # Rasatura e capelli
+            "rasoio elettrico", "regolabarba", "tagliacapelli", "rasoio a lamette",
+            "epilatore", "luce pulsata", "asciugacapelli", "piastra capelli", "arricciacapelli",
+            "spazzola lisciante",
+            # Igiene orale
+            "spazzolino elettrico", "idropulsore dentale", "dentifricio",
+            # Profumi e cosmetici
+            "profumo uomo", "profumo donna", "deodorante uomo", "deodorante donna",
+            "crema viso", "siero viso", "crema solare", "struccante", "mascara",
+            "shampoo", "balsamo capelli", "bagnoschiuma", "cera per capelli",
+            # Salute e benessere
+            "misuratore di pressione", "bilancia pesapersone smart", "termometro",
+            "massaggiatore cervicale", "pistola massaggiante", "cuscino riscaldante",
+            # Integratori e sport
+            "proteine whey", "creatina", "integratore magnesio", "integratore vitamina d",
+            "multivitaminico", "barrette proteiche",
+        ],
+        "ebay_queries": ["rasoio elettrico", "spazzolino elettrico", "asciugacapelli",
+                         "profumo", "regolabarba"],
+    },
 }
-
 # Parole nel titolo che fanno aggiungere l'avviso "batteria non inclusa"
 NO_BATTERY_HINTS = ["senza batteria", "solo corpo", "body only", "batteria non inclusa", "tool only"]
-
 DISCLOSURE = ("In qualità di Affiliato Amazon ricevo un guadagno dagli acquisti idonei. "
               "I prezzi possono cambiare: verifica sempre sulla pagina del prodotto.")
