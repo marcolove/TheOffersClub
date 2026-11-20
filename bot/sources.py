@@ -1,6 +1,6 @@
 """
 Fonti delle offerte.
- - Amazon PA-API (automatica, attiva quando inserisci le chiavi dopo le 3 vendite)
+ - Amazon Creators API (automatica, attiva quando inserisci le credenziali Creators API)
  - Lista prodotti data/prodotti.csv (fase di avvio): link, prezzo, data, immagine,
    scadenza e terminata facoltativi
  - eBay Browse API (facoltativa, prezzi reali da subito)
@@ -38,40 +38,61 @@ def today_label():
     return datetime.now(ROME).strftime("%d/%m")
 
 
-# --------------------------------------------------------------------------- Amazon PA-API
+# --------------------------------------------------------------------------- Amazon Creators API
+_API = None
+
+
 def _api(tag):
-    key, secret = os.getenv("AMAZON_ACCESS_KEY"), os.getenv("AMAZON_SECRET_KEY")
-    if not (key and secret and tag):
+    """Client Creators API (creato una volta per giro). None se mancano le credenziali."""
+    global _API
+    if _API is not None:
+        return _API or None
+    cid = os.getenv("AMAZON_CREDENTIAL_ID")
+    secret = os.getenv("AMAZON_CREDENTIAL_SECRET")
+    version = (os.getenv("AMAZON_API_VERSION") or "").strip()
+    if not (cid and secret and version and tag):
+        _API = False
         return None
     try:
-        from amazon_paapi import AmazonApi
+        from amazon_creatorsapi import AmazonCreatorsApi
     except ImportError:
-        print("[amazon-api] libreria python-amazon-paapi non installata")
+        print("[amazon-api] libreria python-amazon-paapi >= 7 non installata")
+        _API = False
         return None
-    return AmazonApi(key, secret, tag, "IT", throttling=1.1)
+    try:
+        _API = AmazonCreatorsApi(credential_id=cid, credential_secret=secret, version=version,
+                                 tag=tag, country="IT")
+    except Exception as e:
+        print(f"[amazon-api] client non creato (controlla AMAZON_API_VERSION): {e}")
+        _API = False
+        return None
+    return _API
 
 
 def from_amazon_api(tag):
     api = _api(tag)
     if not api:
-        print("[amazon-api] chiavi assenti: salto (normale prima delle 3 vendite)")
+        print("[amazon-api] credenziali assenti: salto (normale prima delle 10 vendite)")
         return []
+    # Poche ricerche per giro: il limite di richieste dipende dalle vendite fatte via API
+    n = getattr(config, "AMAZON_SEARCHES_PER_ROUND", 3)
+    pairs = [(nid, kw) for nid, ni in config.NICHES.items() for kw in ni["keywords"]]
     offers = []
-    for niche_id, niche in config.NICHES.items():
-        for kw in random.sample(niche["keywords"], k=min(3, len(niche["keywords"]))):
-            try:
-                # Nessun filtro di sconto lato Amazon: a volte scarta offerte valide.
-                # Lo sconto minimo si applica dopo, in main.py.
-                res = api.search_items(keywords=kw, search_index=niche.get("amazon_search_index", "All"),
-                                       item_count=10)
-                items = getattr(res, "items", None) or []
-            except Exception as e:                      # nessun risultato o limite superato
-                print(f"[amazon-api] {niche_id}/{kw}: {e}")
-                continue
-            for it in items:
-                o = _parse_amazon_item(it, niche_id, tag)
-                if o:
-                    offers.append(o)
+    for niche_id, kw in random.sample(pairs, k=min(n, len(pairs))):
+        niche = config.NICHES[niche_id]
+        try:
+            # Nessun filtro di sconto lato Amazon: lo sconto minimo si applica dopo, in main.py.
+            res = api.search_items(keywords=kw, search_index=niche.get("amazon_search_index", "All"),
+                                   item_count=10)
+            items = getattr(res, "items", None) or []
+        except Exception as e:                      # nessun risultato o limite superato
+            print(f"[amazon-api] {niche_id}/{kw}: {e}")
+            continue
+        for it in items:
+            o = _parse_amazon_item(it, niche_id, tag)
+            if o:
+                offers.append(o)
+        time.sleep(1.1)                             # massimo 1 richiesta al secondo
     print(f"[amazon-api] trovate {len(offers)} offerte")
     return offers
 
@@ -79,7 +100,7 @@ def from_amazon_api(tag):
 def amazon_current_prices(asins, tag):
     """Prezzo attuale dei prodotti già pubblicati, per capire se l'offerta è terminata.
     Restituisce {asin: prezzo}; 0 = non più disponibile. Gli ASIN non controllati
-    (errore o chiavi assenti) non compaiono: per quelli non si decide nulla."""
+    (errore o credenziali assenti) non compaiono: per quelli non si decide nulla."""
     api = _api(tag)
     out = {}
     if not api or not asins:
@@ -90,16 +111,21 @@ def amazon_current_prices(asins, tag):
         try:
             items = api.get_items(chunk) or []
         except Exception as e:
-            print(f"[amazon-api] controllo prezzi: {e}")
+            if type(e).__name__ == "ItemsNotFoundError":   # nessuno dei prodotti esiste più
+                for a in chunk:
+                    out[a] = 0.0
+            else:                                       # errore o limite: non si decide nulla
+                print(f"[amazon-api] controllo prezzi: {e}")
             continue
         found = set()
         for it in items:
             found.add(it.asin)
-            p = _g(it, "offers.listings.0.price.amount")
+            p = _price(it)
             out[it.asin] = float(p) if p else 0.0
         for a in chunk:
             if a not in found:
                 out[a] = 0.0
+        time.sleep(1.1)
     return out
 
 
@@ -108,25 +134,40 @@ def _g(obj, path):
         if obj is None:
             return None
         if p.isdigit():
-            obj = obj[int(p)] if len(obj) > int(p) else None
+            obj = obj[int(p)] if obj and len(obj) > int(p) else None
         else:
             obj = getattr(obj, p, None)
     return obj
 
 
+def _listing(it):
+    """Offerta principale: quella che vince la Buy Box, altrimenti la prima."""
+    listings = _g(it, "offers_v2.listings") or []
+    for l in listings:
+        if getattr(l, "is_buy_box_winner", False):
+            return l
+    return listings[0] if listings else None
+
+
+def _price(it):
+    return _g(_listing(it), "price.money.amount")
+
+
 def _parse_amazon_item(it, niche_id, tag):
     title = _g(it, "item_info.title.display_value")
-    price = _g(it, "offers.listings.0.price.amount")
+    lst = _listing(it)
+    price = _g(lst, "price.money.amount")
     if not title or not price:
         return None
-    old = _g(it, "offers.listings.0.saving_basis.amount")
-    disc = _g(it, "offers.listings.0.price.savings.percentage")
+    old = _g(lst, "price.saving_basis.money.amount")
+    disc = _g(lst, "price.savings.percentage")
     if disc is None and old and old > price:
         disc = round((1 - price / old) * 100)
     brand = _g(it, "item_info.by_line_info.brand.display_value") or ""
-    # Link nel post: forma corta e pulita (con il tuo tag), come per i prodotti del CSV
+    # Link ESATTAMENTE come lo restituisce l'API: se si modifica si perde l'attribuzione
+    url = getattr(it, "detail_page_url", None) or amazon_link(it.asin, tag)
     return _offer(key=f"amz:{it.asin}", source="amazon", origin="api", asin=it.asin, niche=niche_id,
-                  title=title, url=amazon_link(it.asin, tag), preview_url=amazon_link(it.asin, tag),
+                  title=title, url=url, preview_url=url,
                   image=_g(it, "images.primary.large.url") or "", price=float(price),
                   old_price=float(old) if old else None, discount=int(disc) if disc else None,
                   brand=brand, price_date=today_label())
