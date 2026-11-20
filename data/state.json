@@ -6,5 +6,11 @@
   "amz:B0F22BB4BV": "2026-11-18T15:41:39.230880+00:00"
  },
  "hub_pin_id": 10,
- "live": {}
+ "live": {},
+ "pins": {
+  "tech": 3,
+  "casa": 48,
+  "utensili": 4,
+  "persona": null
+ }
 }
