@@ -5,8 +5,12 @@ I dati sensibili (token, chiavi) NON vanno qui: vanno nei Secrets di GitHub.
 """
 BRAND = "TheOffersClub"                      # nome del brand (usato su sito e post)
 SITE_TITLE = "TheOffersClub – Le migliori offerte del giorno"
+SITE_TAGLINE = "Solo sconti veri, scelti ogni giorno."
 SITE_DESCRIPTION = ("Offerte Amazon selezionate ogni giorno su tecnologia, casa e cucina, "
-                    "utensili e cura della persona. Iscriviti ai canali Telegram gratuiti.")
+                    "utensili e cura della persona, con classifiche e guide all'acquisto.")
+# False finché il sito è sull'indirizzo gratuito di GitHub: Google non lo indicizza.
+# Mettere True SOLO dopo aver collegato il dominio definitivo (es. theoffersclub.it).
+SITE_INDEXABLE = False
 TELEGRAM_FOLDER_LINK = ""                    # es. "https://t.me/addlist/XXXX" (cartella con tutti i canali)
 WHATSAPP_CHANNEL_LINK = ""                   # es. "https://whatsapp.com/channel/XXXX" (facoltativo)
 # ------------------------------------------------------------------ Messaggio fissato del General
@@ -51,16 +55,22 @@ SITE_OFFERS_PER_PAGE = 60                    # offerte per pagina del sito
 HUB = {
     "channel": "@theoffersclub_hub",         # canale General (offerte dal 25% in su)
     "name": "TheOffersClub – Le migliori offerte",
+    "color": "#c04dff",                      # colori del brand sul sito (viola e azzurro neon)
+    "color2": "#2fa8ff",
+    "logo": "hub",                           # immagine site_assets/img/hub-*.webp
 }
 LAMPO = {
     "enabled": False,                        # canale chiuso: gli sconti top escono nel General con 🔥
     "channel": "@theoffersclub_lampo",
 }
 # Le nicchie: una = un canale Telegram + una pagina del sito
+# "color" e "logo" = colore e immagine del canale sul sito (site_assets/img/<logo>-*.webp)
 NICHES = {
     "tech": {
         "name": "Tech & Gaming",
         "pinned_desc": "PC, monitor, SSD, cuffie, smartphone, smart home, console e accessori gaming: solo offerte con sconto reale, selezionate ogni giorno.",
+        "color": "#2fa8ff",
+        "logo": "tech",
         "emoji": "💻",
         "channel": "@TheOffersClub_Tech",
         "slug": "offerte-tecnologia",
@@ -108,6 +118,8 @@ NICHES = {
     "casa": {
         "name": "Casa & Cucina",
         "pinned_desc": "Piccoli elettrodomestici, pulizia, clima, pentole e le scorte per la casa (detersivi, capsule caffè, carta) in sconto, selezionati ogni giorno.",
+        "color": "#5cff3a",
+        "logo": "casa",
         "emoji": "🏠",
         "channel": "@theoffersclub_casa",
         "slug": "offerte-casa-cucina",
@@ -155,6 +167,8 @@ NICHES = {
     "utensili": {
         "name": "Utensili & Fai da te",
         "pinned_desc": "Trapani, avvitatori, saldatrici, attrezzi manuali, giardino e auto dei migliori marchi: solo kit completi e prodotti veri, niente ricambi.",
+        "color": "#ff8a00",
+        "logo": "utensili",
         "emoji": "🔧",
         "channel": "@theoffersclub_Utensili",
         "slug": "offerte-utensili-fai-da-te",
@@ -205,9 +219,11 @@ NICHES = {
     "persona": {
         "name": "Cura Persona & Salute",
         "pinned_desc": "Trucco, skincare, shampoo e maschere professionali, profumi, piastre, rasoi, spazzolini elettrici e integratori in sconto, selezionati ogni giorno.",
+        "color": "#ff2d55",
+        "logo": "persona",
         "emoji": "🧴",
         "emojis": ["🧴", "🪒", "💆", "🦷", "💄", "💅", "💋", "🧼", "💪", "🌿", "✨", "🩺"],
-        "channel": "@theoffersclub_persona",   # crea il canale con questo username
+        "channel": "@theoffersclub_persona",
         "slug": "offerte-cura-persona",
         "seo_title": "Offerte cura della persona, beauty e salute di oggi",
         "seo_intro": "Trucco, skincare, shampoo e maschere professionali, profumi, piastre, rasoi, spazzolini elettrici e integratori in sconto, selezionati ogni giorno.",
