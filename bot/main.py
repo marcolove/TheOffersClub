@@ -15,7 +15,8 @@ from zoneinfo import ZoneInfo
 
 import config
 from bot import site, sources
-from bot.telegram import Telegram, build_markup, expired_text, format_hub_pinned, format_offer
+from bot.telegram import (Telegram, build_markup, expired_text, format_hub_pinned, format_niche_pinned,
+                          format_offer)
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
 STATE = os.path.join(ROOT, "data", "state.json")
@@ -289,8 +290,14 @@ def main():
                     res, text, mk = send(tg, config.LAMPO["channel"], o, niche, tag, for_hub=True)
                     track(state, o, res, config.LAMPO["channel"], text, mk, now)
             print(f"Pubblicate: {count}")
+        # Messaggi fissati: Hub + un messaggio di benvenuto in ogni canale tematico.
+        # Vengono solo MODIFICATI (mai ripubblicati) quando cambiano nomi, canali o testi.
         state["hub_pin_id"] = tg.upsert_pinned(config.HUB["channel"], format_hub_pinned(site_url),
-                                               state.get("hub_pin_id"))
+                                               state.get("hub_pin_id"),
+                                               fixed=getattr(config, "HUB_PIN_ID", None))
+        pins = state.setdefault("pins", {})
+        for nid, n in config.NICHES.items():
+            pins[nid] = tg.upsert_pinned(n["channel"], format_niche_pinned(n, site_url), pins.get(nid))
 
     expire_prices(history, now)
     old = (now - timedelta(days=30)).isoformat()

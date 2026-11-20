@@ -101,7 +101,7 @@ class Telegram:
         gone = any(s in self.last_error for s in ("message is not modified", "message to edit not found"))
         return bool(res) or gone
 
-    # ------------------------------------------------------------------ messaggio fissato Hub
+    # ------------------------------------------------------------------ messaggi fissati
     def current_pinned_id(self, chat_id):
         """ID del messaggio attualmente fissato nel canale (None se non c'è o in caso di errore)."""
         res = self.call("getChat", chat_id=chat_id)
@@ -109,22 +109,21 @@ class Telegram:
             return res["pinned_message"].get("message_id")
         return None
 
-    def upsert_pinned(self, chat_id, text, message_id=None):
-        """Aggiorna il messaggio fissato dell'Hub MODIFICANDOLO. Non ne manda mai uno nuovo,
+    def upsert_pinned(self, chat_id, text, message_id=None, fixed=None):
+        """Aggiorna il messaggio fissato di un canale MODIFICANDOLO. Non ne manda mai uno nuovo,
         tranne il caso in cui nel canale non ci sia proprio nessun messaggio fissato.
 
-        Ordine:
-        1) ID impostato a mano in config.py (HUB_PIN_ID), se presente;
-        2) messaggio fissato attualmente nel canale (letto da Telegram);
-        3) ID salvato in state.json.
+        Ordine: 1) ID impostato a mano (fixed, es. HUB_PIN_ID in config.py);
+                2) messaggio fissato attualmente nel canale (letto da Telegram);
+                3) ID salvato in state.json.
         Se la modifica fallisce (rete, limiti, ecc.) non fa nulla: riproverà al giro dopo."""
         if self.dry:
             return message_id
 
-        fixed = getattr(config, "HUB_PIN_ID", None)
         pinned_now = self.current_pinned_id(chat_id)
         if pinned_now is None and self.last_error:      # getChat fallito: non rischiare doppioni
-            print(f"  [telegram] messaggio fissato non verificabile ({self.last_error}): salto")
+            print(f"  [telegram] messaggio fissato di {chat_id} non verificabile "
+                  f"({self.last_error}): salto")
             return message_id
 
         target = fixed or pinned_now or message_id
@@ -132,7 +131,7 @@ class Telegram:
             self.call("editMessageText", chat_id=chat_id, message_id=target, text=text,
                       parse_mode="HTML", disable_web_page_preview="true")
             if self.last_error and "message is not modified" not in self.last_error:
-                print(f"  [telegram] messaggio fissato non aggiornato: {self.last_error}")
+                print(f"  [telegram] messaggio fissato di {chat_id} non aggiornato: {self.last_error}")
             return target                                # in ogni caso: MAI un nuovo messaggio
 
         # Nessun messaggio fissato nel canale e nessun ID noto: lo crea una sola volta
@@ -141,7 +140,7 @@ class Telegram:
         if res and res.get("message_id"):
             self.call("pinChatMessage", chat_id=chat_id, message_id=res["message_id"],
                       disable_notification="true")
-            print(f"  [telegram] creato messaggio fissato Hub (id {res['message_id']})")
+            print(f"  [telegram] creato messaggio fissato in {chat_id} (id {res['message_id']})")
             return res["message_id"]
         return message_id
 
@@ -330,8 +329,13 @@ def build_markup(o, tag=""):
     return {"inline_keyboard": rows}
 
 
+def _site_link(url, label):
+    return f'<a href="{html.escape(url, quote=True)}">{html.escape(label, quote=False)}</a>'
+
+
 def format_hub_pinned(site_url):
     e = lambda x: html.escape(x, quote=False)
+    site_url = (site_url or "").rstrip("/")
     lines = [f"📌 <b>Benvenuto in {e(config.BRAND)}!</b>"]
     desc = getattr(config, "HUB_DESCRIPTION", "")
     if desc:
@@ -344,6 +348,30 @@ def format_hub_pinned(site_url):
     if config.TELEGRAM_FOLDER_LINK:
         lines += ["", f"➕ <a href=\"{config.TELEGRAM_FOLDER_LINK}\">Iscriviti a tutti con un clic</a>"]
     if site_url and getattr(config, "SHOW_SITE_IN_PINNED", False):
-        lines.append(f"🌐 Sito: {site_url}")
+        lines += ["", f"🌐 Tutte le offerte anche sul sito: {_site_link(site_url + '/', 'apri il sito')}"]
+    lines += ["", f"<i>{e(config.DISCLOSURE)}</i>"]
+    return "\n".join(lines)
+
+
+def format_niche_pinned(niche, site_url):
+    """Messaggio fissato di un canale tematico: cosa c'è nel canale, sito, rimando all'Hub."""
+    e = lambda x: html.escape(x, quote=False)
+    site_url = (site_url or "").rstrip("/")
+    lines = [f"📌 <b>{niche['emoji']} {e(niche['name'])} · {e(config.BRAND)}</b>"]
+    desc = niche.get("pinned_desc") or niche.get("seo_intro", "")
+    if desc:
+        lines += ["", e(desc)]
+    lines += ["", f"✅ Pubblichiamo solo offerte con almeno il {config.MIN_DISCOUNT}% di sconto, "
+                  "tutti i giorni dalle 8 alle 23."]
+    lines += ["", "🔔 Attiva le notifiche per non perdere le offerte migliori."]
+    if site_url and getattr(config, "SHOW_SITE_IN_PINNED", False):
+        page = f"{site_url}/{niche['slug']}/"
+        lines += ["", f"🌐 Tutte le offerte {e(niche['name'])} sul sito: {_site_link(page, 'apri la pagina')}"]
+    hub = config.HUB.get("channel", "")
+    if hub:
+        lines += ["", f"📢 Gli sconti migliori di tutte le categorie: "
+                      f"{channel_link(hub, config.HUB.get('name', 'Hub'))}"]
+    if config.TELEGRAM_FOLDER_LINK:
+        lines.append(f"➕ <a href=\"{config.TELEGRAM_FOLDER_LINK}\">Iscriviti a tutti i canali con un clic</a>")
     lines += ["", f"<i>{e(config.DISCLOSURE)}</i>"]
     return "\n".join(lines)
