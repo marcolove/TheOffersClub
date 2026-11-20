@@ -27,10 +27,14 @@ MIN_HOUR = getattr(config, "MIN_HOUR", 8)
 MAX_HOUR = getattr(config, "MAX_HOUR", 22)
 MIN_POSTS = getattr(config, "MIN_POSTS_PER_NICHE_PER_RUN", 1)
 MAX_POSTS = getattr(config, "MAX_POSTS_PER_NICHE_PER_RUN", 2)
+PEAK_HOURS = set(getattr(config, "PEAK_HOURS", []))
+PEAK_MAX_POSTS = getattr(config, "PEAK_MAX_POSTS", MAX_POSTS)
+OFFPEAK_POST_CHANCE = getattr(config, "OFFPEAK_POST_CHANCE", 1.0)
 MIN_DISCOUNT = getattr(config, "MIN_DISCOUNT", 15)
 MIN_SAVING_VALUE = getattr(config, "MIN_SAVING_VALUE", 5)
 PRICE_MAX_AGE_HOURS = getattr(config, "PRICE_MAX_AGE_HOURS", 24)
 PREVIEW_FALLBACK = getattr(config, "PREVIEW_FALLBACK", False)   # True = senza foto usa l'anteprima del link
+
 # Offerte scadute
 EXPIRE_AUTO_HOURS = getattr(config, "EXPIRE_AUTO_HOURS", 24)    # prezzo scritto a mano: dopo N ore "non più garantito" (0 = mai)
 TRACK_DAYS = getattr(config, "TRACK_DAYS", 3)                   # per quanti giorni il bot segue un post
@@ -109,15 +113,26 @@ def in_active_hours(h):
     return h >= MIN_HOUR or h <= MAX_HOUR          # fascia a cavallo della mezzanotte (es. 20-2)
 
 
+def posts_limit(h):
+    """Post massimi per canale in questo giro: di più nelle ore di punta, meno nelle altre."""
+    if h in PEAK_HOURS:
+        return random.randint(max(MIN_POSTS, 1), max(MIN_POSTS, 1, PEAK_MAX_POSTS))
+    if random.random() >= OFFPEAK_POST_CHANCE:
+        return 0
+    return random.randint(MIN_POSTS, max(MIN_POSTS, MAX_POSTS))
+
+
 def good_enough(o):
     """Filtro di qualità. I prodotti del CSV (senza prezzo o con prezzo a mano) passano sempre."""
     if not o.get("price") or o.get("manual_price"):
         return True
     if (o.get("discount") or 0) < MIN_DISCOUNT:
         return False
-    if MIN_SAVING_VALUE >= 0:
+    niche = config.NICHES.get(o.get("niche"), {})
+    min_saving = niche.get("min_saving", MIN_SAVING_VALUE)   # risparmio minimo per canale
+    if min_saving >= 0:
         old = o.get("old_price") or 0
-        if old - o["price"] < MIN_SAVING_VALUE:       # es. da 10 € a 9 €: non vale un post
+        if old - o["price"] < min_saving:           # es. da 10 € a 9 €: non vale un post
             return False
     return True
 
@@ -187,7 +202,6 @@ def check_expired(tg, state, history, tag, now):
         elif (e.get("manual_price") and EXPIRE_AUTO_HOURS > 0
               and now - posted >= timedelta(hours=EXPIRE_AUTO_HOURS)):
             reason = "stale"
-
         if reason:
             if reason == "end":
                 label, img_label = end_label(when, posted), LABEL_END
@@ -219,13 +233,11 @@ def main():
     if not tag:
         print("ATTENZIONE: AMAZON_TAG mancante, nessun prodotto Amazon verrà pubblicato")
     tg = Telegram(token, dry_run=dry or not token)
-
     state = load(STATE, {"posted": {}, "hub_pin_id": None, "live": {}})
     state.setdefault("posted", {})
     state.setdefault("live", {})
     history = load(HISTORY, [])
     now = datetime.now(timezone.utc)
-
     # pulizia prodotti pubblicati da più di N giorni (così possono tornare)
     cutoff = (now - timedelta(days=config.REPOST_AFTER_DAYS)).isoformat()
     state["posted"] = {k: v for k, v in state["posted"].items() if v > cutoff}
@@ -233,13 +245,17 @@ def main():
     if not site_only:
         # 1) offerte scadute: si aggiornano a ogni giro, anche fuori fascia (le modifiche non notificano)
         check_expired(tg, state, history, tag, now)
-
         # 2) nuovi post
         h = italy_hour()
         if not in_active_hours(h) and "--force" not in sys.argv:
             print(f"Ora italiana {h}: fuori fascia ({MIN_HOUR}-{MAX_HOUR}), niente post")
         else:
-            found = sources.collect_all(tag)
+            limit = {n: posts_limit(h) for n in config.NICHES}
+            if not any(limit.values()):
+                print(f"Ora italiana {h}: giro di pausa (fuori punta), niente post")
+                found = []                               # nessuna ricerca: si risparmiano richieste API
+            else:
+                found = sources.collect_all(tag)
             offers = [o for o in found if good_enough(o) and is_real_product(o)]
             skipped = len([o for o in found if good_enough(o)]) - len(offers)
             if skipped:
@@ -247,7 +263,6 @@ def main():
             random.shuffle(offers)
             # prima i prodotti con prezzo/sconto, poi gli altri
             offers.sort(key=lambda o: (o.get("discount") or 0, o.get("price") is not None), reverse=True)
-            limit = {n: random.randint(MIN_POSTS, max(MIN_POSTS, MAX_POSTS)) for n in config.NICHES}
             count = {n: 0 for n in config.NICHES}
             seen_now = set()
             for o in offers:
@@ -274,12 +289,10 @@ def main():
                     res, text, mk = send(tg, config.LAMPO["channel"], o, niche, tag, for_hub=True)
                     track(state, o, res, config.LAMPO["channel"], text, mk, now)
             print(f"Pubblicate: {count}")
-
         state["hub_pin_id"] = tg.upsert_pinned(config.HUB["channel"], format_hub_pinned(site_url),
                                                state.get("hub_pin_id"))
 
     expire_prices(history, now)
-
     old = (now - timedelta(days=30)).isoformat()
     kept, per = [], {}
     for o in history:
@@ -289,7 +302,6 @@ def main():
         if per[o["niche"]] <= 80:
             kept.append(o)
     history = kept
-
     if not dry:
         save(STATE, state)
         save(HISTORY, history)

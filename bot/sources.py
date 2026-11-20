@@ -38,6 +38,26 @@ def today_label():
     return datetime.now(ROME).strftime("%d/%m")
 
 
+# --------------------------------------------------------------------------- scelta delle ricerche
+def pick_searches(n):
+    """Sceglie n ricerche (nicchia, parola chiave) senza ripetizioni.
+    Le parole in "top_keywords" pesano TOP_KEYWORD_WEIGHT volte di più. Siccome ogni nicchia
+    ha lo stesso numero di parole e di top_keywords, l'equilibrio tra canali resta invariato."""
+    w_top = getattr(config, "TOP_KEYWORD_WEIGHT", 1)
+    pool = []
+    for nid, ni in config.NICHES.items():
+        top = set(ni.get("top_keywords", []))
+        for kw in ni["keywords"]:
+            pool.append(((nid, kw), w_top if kw in top else 1))
+    chosen = []
+    while pool and len(chosen) < n:
+        items, weights = zip(*pool)
+        pick = random.choices(items, weights=weights, k=1)[0]
+        chosen.append(pick)
+        pool = [p for p in pool if p[0] != pick]
+    return chosen
+
+
 # --------------------------------------------------------------------------- Amazon Creators API
 _API = None
 
@@ -76,9 +96,8 @@ def from_amazon_api(tag):
         return []
     # Poche ricerche per giro: il limite di richieste dipende dalle vendite fatte via API
     n = getattr(config, "AMAZON_SEARCHES_PER_ROUND", 3)
-    pairs = [(nid, kw) for nid, ni in config.NICHES.items() for kw in ni["keywords"]]
     offers = []
-    for niche_id, kw in random.sample(pairs, k=min(n, len(pairs))):
+    for niche_id, kw in pick_searches(n):
         niche = config.NICHES[niche_id]
         try:
             # Nessun filtro di sconto lato Amazon: lo sconto minimo si applica dopo, in main.py.
