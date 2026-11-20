@@ -12,7 +12,7 @@ WHATSAPP_CHANNEL_LINK = ""                   # es. "https://whatsapp.com/channel
 # ------------------------------------------------------------------ Messaggio fissato del General
 HUB_DESCRIPTION = ("Qui trovi le offerte migliori di ogni categoria, con sconti dal 25% in su. "
                    "Vuoi tutte le offerte di un tema? Iscriviti al canale che ti interessa.")
-SHOW_SITE_IN_PINNED = False                  # True per mostrare il link al sito nel messaggio fissato
+SHOW_SITE_IN_PINNED = True                   # link al sito nei messaggi fissati (Hub e canali)
 # ------------------------------------------------------------------ Orari (ora italiana)
 # Il bot pubblica solo tra MIN_HOUR e MAX_HOUR compresi (es. 8 e 22 = dalle 8:00 alle 22:59).
 MIN_HOUR = 8
@@ -60,6 +60,7 @@ LAMPO = {
 NICHES = {
     "tech": {
         "name": "Tech & Gaming",
+        "pinned_desc": "PC, monitor, SSD, cuffie, smartphone, smart home, console e accessori gaming: solo offerte con sconto reale, selezionate ogni giorno.",
         "emoji": "💻",
         "channel": "@TheOffersClub_Tech",
         "slug": "offerte-tecnologia",
@@ -106,6 +107,7 @@ NICHES = {
     },
     "casa": {
         "name": "Casa & Cucina",
+        "pinned_desc": "Piccoli elettrodomestici, pulizia, clima, pentole e le scorte per la casa (detersivi, capsule caffè, carta) in sconto, selezionati ogni giorno.",
         "emoji": "🏠",
         "channel": "@theoffersclub_casa",
         "slug": "offerte-casa-cucina",
@@ -152,6 +154,7 @@ NICHES = {
     },
     "utensili": {
         "name": "Utensili & Fai da te",
+        "pinned_desc": "Trapani, avvitatori, saldatrici, attrezzi manuali, giardino e auto dei migliori marchi: solo kit completi e prodotti veri, niente ricambi.",
         "emoji": "🔧",
         "channel": "@theoffersclub_Utensili",
         "slug": "offerte-utensili-fai-da-te",
@@ -201,6 +204,7 @@ NICHES = {
     },
     "persona": {
         "name": "Cura Persona & Salute",
+        "pinned_desc": "Trucco, skincare, shampoo e maschere professionali, profumi, piastre, rasoi, spazzolini elettrici e integratori in sconto, selezionati ogni giorno.",
         "emoji": "🧴",
         "emojis": ["🧴", "🪒", "💆", "🦷", "💄", "💅", "💋", "🧼", "💪", "🌿", "✨", "🩺"],
         "channel": "@theoffersclub_persona",   # crea il canale con questo username
