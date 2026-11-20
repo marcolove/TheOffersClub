@@ -202,34 +202,67 @@ NICHES = {
     "persona": {
         "name": "Cura Persona & Salute",
         "emoji": "🧴",
-        "emojis": ["🧴", "🪒", "💆", "🦷", "💄", "🧼", "💪", "🌿", "✨", "🩺"],
+        "emojis": ["🧴", "🪒", "💆", "🦷", "💄", "💅", "💋", "🧼", "💪", "🌿", "✨", "🩺"],
         "channel": "@theoffersclub_persona",   # crea il canale con questo username
         "slug": "offerte-cura-persona",
-        "seo_title": "Offerte cura della persona e salute di oggi",
-        "seo_intro": "Rasoi, regolabarba, spazzolini elettrici, asciugacapelli, profumi, skincare e integratori in sconto, selezionati ogni giorno.",
+        "seo_title": "Offerte cura della persona, beauty e salute di oggi",
+        "seo_intro": "Trucco, skincare, shampoo e maschere professionali, profumi, piastre, rasoi, spazzolini elettrici e integratori in sconto, selezionati ogni giorno.",
         "amazon_search_index": "All",
         "min_price": 10,
-        "exclude_words": ["testine", "lame di ricambio", "beccucci", "campione", "tester"],
+        "exclude_words": ["testine", "lame di ricambio", "beccucci", "campione", "tester",
+                          "flacone vuoto", "flaconi vuoti", "dispenser vuoto"],
         "keywords": [
-            # Rasatura e capelli
+            # Rasatura e depilazione
             "rasoio elettrico", "regolabarba", "tagliacapelli", "rasoio a lamette",
-            "epilatore", "luce pulsata", "asciugacapelli", "piastra capelli", "arricciacapelli",
-            "spazzola lisciante",
+            "rasoio donna", "epilatore", "luce pulsata", "kit ceretta",
+            # Styling capelli
+            "asciugacapelli", "asciugacapelli professionale", "piastra capelli",
+            "arricciacapelli", "spazzola lisciante", "spazzola asciugacapelli",
+            "styler multifunzione capelli", "ferro arricciacapelli",
+            # Haircare (anche fascia alta)
+            "shampoo", "balsamo capelli", "maschera capelli", "olio per capelli",
+            "siero capelli", "trattamento ricostruzione capelli", "shampoo professionale",
+            "kerastase", "olaplex", "davines", "l'oreal professionnel", "redken",
+            "shampoo anticaduta", "lozione anticaduta", "tinta capelli",
+            # Skincare viso
+            "crema viso", "crema viso antirughe", "siero viso", "siero vitamina c",
+            "siero acido ialuronico", "retinolo", "contorno occhi", "maschera viso",
+            "patch occhi", "detergente viso", "acqua micellare", "struccante",
+            "tonico viso", "esfoliante viso", "crema solare", "crema solare viso spf 50",
+            "la roche posay", "cerave", "vichy", "clinique", "estee lauder",
+            # Trucco
+            "fondotinta", "correttore", "cipria", "primer viso", "blush", "bronzer",
+            "illuminante", "palette ombretti", "mascara", "eyeliner", "matita occhi",
+            "rossetto", "rossetto liquido", "gloss labbra", "matita sopracciglia",
+            "spray fissante trucco", "set pennelli trucco", "spugnetta trucco",
+            "kit trucco", "beauty case",
+            # Unghie
+            "smalto semipermanente", "kit semipermanente", "lampada uv unghie",
+            "fresa unghie", "smalto unghie",
+            # Corpo
+            "crema corpo", "olio corpo", "scrub corpo", "crema anticellulite",
+            "autoabbronzante", "bagnoschiuma", "deodorante uomo", "deodorante donna",
+            "crema mani",
+            # Profumi
+            "profumo donna", "profumo uomo", "eau de parfum donna", "eau de parfum uomo",
+            "cofanetto profumo",
+            # Beauty device
+            "spazzola pulizia viso", "dispositivo radiofrequenza viso", "led mask viso",
+            "specchio trucco luminoso",
             # Igiene orale
-            "spazzolino elettrico", "idropulsore dentale", "dentifricio",
-            # Profumi e cosmetici
-            "profumo uomo", "profumo donna", "deodorante uomo", "deodorante donna",
-            "crema viso", "siero viso", "crema solare", "struccante", "mascara",
-            "shampoo", "balsamo capelli", "bagnoschiuma", "cera per capelli",
+            "spazzolino elettrico", "spazzolino sonico", "idropulsore dentale",
+            "dentifricio sbiancante", "kit sbiancamento denti",
+            # Uomo
+            "cera per capelli", "olio barba", "kit cura barba", "dopobarba",
             # Salute e benessere
             "misuratore di pressione", "bilancia pesapersone smart", "termometro",
             "massaggiatore cervicale", "pistola massaggiante", "cuscino riscaldante",
             # Integratori e sport
             "proteine whey", "creatina", "integratore magnesio", "integratore vitamina d",
-            "multivitaminico", "barrette proteiche",
+            "multivitaminico", "barrette proteiche", "collagene", "integratore capelli",
         ],
         "ebay_queries": ["rasoio elettrico", "spazzolino elettrico", "asciugacapelli",
-                         "profumo", "regolabarba"],
+                         "profumo donna", "piastra capelli", "palette trucco"],
     },
 }
 # Parole nel titolo che fanno aggiungere l'avviso "batteria non inclusa"
