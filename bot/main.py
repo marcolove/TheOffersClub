@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import config
-from bot import site, sources
+from bot import rankings, site, sources
 from bot.telegram import (Telegram, build_markup, expired_text, format_hub_pinned, format_niche_pinned,
                           format_offer)
 
@@ -47,10 +47,7 @@ LABEL_STALE = getattr(config, "EXPIRED_LABEL_STALE", "SCADUTA")
 # ------------------------------------------------------------------ Solo prodotti "veri"
 # Vale per le offerte trovate in automatico (API Amazon, eBay). I prodotti che metti a mano
 # nel CSV li hai scelti tu e non vengono filtrati.
-# Prezzo minimo (prezzo scontato) sotto cui il prodotto è quasi sempre un accessorio.
 MIN_PRICE = getattr(config, "MIN_PRICE", 15)            # per nicchia: "min_price" in NICHES
-# Frasi nel titolo che indicano ricambi, accessori, prodotti "compatibili con".
-# Si confrontano parole intere, senza maiuscole/minuscole.
 EXCLUDE_WORDS = getattr(config, "EXCLUDE_WORDS", [
     "ricambio", "ricambi", "di ricambio", "pezzi di ricambio", "parti di ricambio",
     "compatibile con", "compatibili con", "compatibile per", "compatibili per",
@@ -61,7 +58,6 @@ EXCLUDE_WORDS = getattr(config, "EXCLUDE_WORDS", [
     "cover per", "custodia per", "pellicola", "vetro temperato", "skin", "adesivo", "adesivi",
     "usato", "ricondizionato", "difettoso",
 ])
-# Parole in più da escludere solo in una nicchia: "exclude_words" in NICHES.
 
 
 def _rx(words):
@@ -290,14 +286,21 @@ def main():
                     res, text, mk = send(tg, config.LAMPO["channel"], o, niche, tag, for_hub=True)
                     track(state, o, res, config.LAMPO["channel"], text, mk, now)
             print(f"Pubblicate: {count}")
-        # Messaggi fissati: Hub + un messaggio di benvenuto in ogni canale tematico.
-        # Vengono solo MODIFICATI (mai ripubblicati) quando cambiano nomi, canali o testi.
+        # 3) messaggi fissati: Hub + un messaggio in ogni canale tematico.
+        #    Vengono solo MODIFICATI (mai ripubblicati) quando cambiano nomi, canali o testi.
         state["hub_pin_id"] = tg.upsert_pinned(config.HUB["channel"], format_hub_pinned(site_url),
                                                state.get("hub_pin_id"),
                                                fixed=getattr(config, "HUB_PIN_ID", None))
         pins = state.setdefault("pins", {})
         for nid, n in config.NICHES.items():
             pins[nid] = tg.upsert_pinned(n["channel"], format_niche_pinned(n, site_url), pins.get(nid))
+        # 4) classifiche automatiche e prezzi del sito (solo con la Creators API attiva)
+        if not dry:
+            try:
+                rankings.update(tag, now)
+                rankings.refresh_prices(tag, history, state, now)
+            except Exception as ex:                      # un errore qui non deve fermare il bot
+                print(f"[classifiche/prezzi] errore: {ex}")
 
     expire_prices(history, now)
     old = (now - timedelta(days=30)).isoformat()

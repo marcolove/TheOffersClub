@@ -1,16 +1,17 @@
 ---
 titolo: I migliori trapani avvitatori a batteria economici
-descrizione: Come scegliere un trapano avvitatore a batteria economico per casa e fai da te: cosa guardare, errori da evitare e offerte attive di oggi.
+descrizione: Come scegliere un trapano avvitatore a batteria economico per casa e fai da te: cosa guardare, errori da evitare e offerte attive.
 canale: utensili
+auto: si
+amazon: trapano avvitatore batteria
 cerca: trapano avvitatore, avvitatore a batteria, trapano a batteria
+prezzo_min: 30
 prezzo_max: 150
-# Classifica: aggiungi i prodotti sotto, uno per riga: ASIN | Nome | Perché è in classifica
-# Se il bot ha un'offerta attiva per quell'ASIN, compare "In offerta ora" con il prezzo.
-prodotti:
+escludi: solo corpo, senza batteria, body only, batteria per, punte, inserti
 ---
 # I migliori trapani avvitatori a batteria economici
 
-Per montare mensole, mobili e tasselli in casa non serve un utensile professionale: un buon trapano avvitatore a batteria sotto i 150 € copre quasi tutti i lavori domestici. La differenza la fanno pochi dettagli, che ti spieghiamo qui sotto.
+Per montare mensole, mobili e tasselli in casa non serve un utensile professionale: un buon trapano avvitatore a batteria sotto i 150 € copre quasi tutti i lavori domestici. La differenza la fanno pochi dettagli.
 
 ## Cosa guardare prima di comprare
 
@@ -18,7 +19,7 @@ Per montare mensole, mobili e tasselli in casa non serve un utensile professiona
 - **Batteria inclusa o "solo corpo"**: molti prezzi bassi sono per la sola macchina. Controlla sempre che il kit includa batteria e caricabatterie.
 - **Percussione**: serve solo per forare muri in mattone o cemento. Per legno e cartongesso non è necessaria.
 - **Coppia (Nm)**: indica la forza in avvitatura. Per uso domestico è sufficiente un valore medio; numeri molto alti servono soprattutto per viti lunghe e lavori pesanti.
-- **Mandrino autoserrante**: permette di cambiare le punte senza chiave, comodo nell'uso quotidiano.
+- **Mandrino autoserrante**: permette di cambiare le punte senza chiave.
 - **Sistema di batterie**: se pensi di comprare altri utensili, scegli un marchio con batterie intercambiabili tra modelli diversi.
 
 ## Errori comuni
@@ -27,6 +28,6 @@ Per montare mensole, mobili e tasselli in casa non serve un utensile professiona
 - Pagare per prestazioni professionali che in casa non si usano mai.
 - Scegliere un modello senza percussione e poi doverci forare il muro.
 
-## Come usiamo questa pagina
+## Come funziona questa classifica
 
-La sezione delle offerte attive si aggiorna da sola: mostra i trapani avvitatori in sconto trovati dal nostro bot, solo quando lo sconto è reale. I prezzi possono cambiare: verifica sempre sulla pagina di Amazon prima di acquistare.
+I prodotti vengono scelti e aggiornati in automatico tra i trapani avvitatori disponibili su Amazon, solo kit con batteria, in base alla valutazione media, al numero di recensioni, alle vendite e alla fascia di prezzo. Le offerte attive compaiono solo quando c'è uno sconto reale.

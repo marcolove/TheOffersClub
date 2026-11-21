@@ -2,12 +2,17 @@
 titolo: Titolo della classifica (quello che la gente cerca su Google)
 descrizione: Frase di massimo 155 caratteri che compare nei risultati di Google.
 canale: utensili
-cerca: parola 1, parola 2, parola 3
+# auto: si = i prodotti li sceglie il bot con la Creators API (valutazioni, recensioni, vendite, prezzo)
+auto: si
+amazon: ricerca da fare su Amazon
+cerca: parola 1, parola 2
+prezzo_min: 20
 prezzo_max: 100
+escludi: solo corpo, ricambio
 bozza: si
-prodotti:
-- B0XXXXXXXX | Nome prodotto 1 | Perché è in classifica, in una frase
-- B0YYYYYYYY | Nome prodotto 2 | Perché è in classifica, in una frase
+# In alternativa a "auto", classifica scritta a mano:
+# prodotti:
+# - B0XXXXXXXX | Nome prodotto | Perché è in classifica
 ---
 # Titolo della classifica
 

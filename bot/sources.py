@@ -89,6 +89,10 @@ def _api(tag):
     return _API
 
 
+def api_available(tag):
+    return bool(_api(tag))
+
+
 def from_amazon_api(tag):
     api = _api(tag)
     if not api:
@@ -116,10 +120,10 @@ def from_amazon_api(tag):
     return offers
 
 
-def amazon_current_prices(asins, tag):
-    """Prezzo attuale dei prodotti già pubblicati, per capire se l'offerta è terminata.
-    Restituisce {asin: prezzo}; 0 = non più disponibile. Gli ASIN non controllati
-    (errore o credenziali assenti) non compaiono: per quelli non si decide nulla."""
+def amazon_offer_details(asins, tag):
+    """Dati aggiornati dei prodotti: {asin: {"price", "old_price", "discount", "title", "image",
+    "url"}} oppure {asin: None} se non più disponibile. Gli ASIN non controllati (errore,
+    limite, credenziali assenti) non compaiono: per quelli non si decide nulla."""
     api = _api(tag)
     out = {}
     if not api or not asins:
@@ -132,20 +136,93 @@ def amazon_current_prices(asins, tag):
         except Exception as e:
             if type(e).__name__ == "ItemsNotFoundError":   # nessuno dei prodotti esiste più
                 for a in chunk:
-                    out[a] = 0.0
+                    out[a] = None
             else:                                       # errore o limite: non si decide nulla
                 print(f"[amazon-api] controllo prezzi: {e}")
             continue
         found = set()
         for it in items:
             found.add(it.asin)
-            p = _price(it)
-            out[it.asin] = float(p) if p else 0.0
+            lst = _listing(it)
+            price = _g(lst, "price.money.amount")
+            if not price:
+                out[it.asin] = None
+                continue
+            old = _g(lst, "price.saving_basis.money.amount")
+            disc = _g(lst, "price.savings.percentage")
+            if disc is None and old and old > price:
+                disc = round((1 - price / old) * 100)
+            out[it.asin] = {"price": float(price), "old_price": float(old) if old else None,
+                            "discount": int(disc) if disc else None,
+                            "title": _g(it, "item_info.title.display_value") or "",
+                            "image": _g(it, "images.primary.large.url") or "",
+                            "url": getattr(it, "detail_page_url", None) or amazon_link(it.asin, tag)}
         for a in chunk:
             if a not in found:
-                out[a] = 0.0
+                out[a] = None
         time.sleep(1.1)
     return out
+
+
+def amazon_current_prices(asins, tag):
+    """Prezzo attuale dei prodotti già pubblicati: {asin: prezzo}, 0 = non più disponibile."""
+    return {a: (d["price"] if d else 0.0) for a, d in amazon_offer_details(asins, tag).items()}
+
+
+def amazon_search_ranked(tag, keywords, search_index="All", pages=2):
+    """Prodotti per le classifiche: fino a 10 x pages risultati, con i dati utili al punteggio
+    (valutazione, recensioni, posizione nelle vendite). I campi non forniti dall'API restano None."""
+    api = _api(tag)
+    if not api:
+        return []
+    out, pos = [], 0
+    for page in range(1, pages + 1):
+        res = None
+        for extra in ({"sort_by": "AvgCustomerReviews"}, {}):   # se l'ordinamento non è accettato, senza
+            try:
+                res = api.search_items(keywords=keywords, search_index=search_index, item_count=10,
+                                       item_page=page, **extra)
+                break
+            except TypeError:
+                continue
+            except Exception as e:
+                print(f"[amazon-api] classifica '{keywords}' pagina {page}: {e}")
+                res = None
+                break
+        items = getattr(res, "items", None) or []
+        if not items:
+            break
+        for it in items:
+            pos += 1
+            lst = _listing(it)
+            price = _g(lst, "price.money.amount")
+            title = _g(it, "item_info.title.display_value")
+            if not title or not price:
+                continue
+            old = _g(lst, "price.saving_basis.money.amount")
+            disc = _g(lst, "price.savings.percentage")
+            if disc is None and old and old > price:
+                disc = round((1 - price / old) * 100)
+            out.append({
+                "asin": it.asin, "title": title, "position": pos,
+                "url": getattr(it, "detail_page_url", None) or amazon_link(it.asin, tag),
+                "image": _g(it, "images.primary.large.url") or "",
+                "brand": _g(it, "item_info.by_line_info.brand.display_value") or "",
+                "price": float(price), "old_price": float(old) if old else None,
+                "discount": int(disc) if disc else None,
+                "rating": _num_or_none(_g(it, "customer_reviews.star_rating.value")),
+                "reviews": _num_or_none(_g(it, "customer_reviews.count")),
+                "sales_rank": _num_or_none(_g(it, "browse_node_info.website_sales_rank.sales_rank")),
+            })
+        time.sleep(1.1)
+    return out
+
+
+def _num_or_none(x):
+    try:
+        return float(x) if x is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 def _g(obj, path):
@@ -166,10 +243,6 @@ def _listing(it):
         if getattr(l, "is_buy_box_winner", False):
             return l
     return listings[0] if listings else None
-
-
-def _price(it):
-    return _g(_listing(it), "price.money.amount")
 
 
 def _parse_amazon_item(it, niche_id, tag):

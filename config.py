@@ -40,12 +40,23 @@ MIN_DISCOUNT = 15                            # sconto minimo % nei canali temati
 MIN_SAVING_VALUE = 5                         # risparmio minimo in euro (-1 = disattivato); per nicchia: "min_saving"
 HUB_MIN_DISCOUNT = 25                        # sconto minimo % per uscire anche nel General
 LAMPO_MIN_DISCOUNT = 60                      # non usato (canale Lampo chiuso)
-PRICE_MAX_AGE_HOURS = 24                     # i prezzi Amazon API non si mostrano sul sito oltre N ore
+PRICE_MAX_AGE_HOURS = 24                     # il sito non mostra prezzi più vecchi di N ore (regola Amazon)
 EXPIRE_AUTO_HOURS = 0                        # 0 = i post del CSV non scadono mai da soli
 TRACK_DAYS = 3                               # giorni in cui il bot ricontrolla i post via API
 AMAZON_SEARCHES_PER_ROUND = 3                # ricerche Creators API per giro (limite richieste)
 PRIME_BUTTON = True                          # bottone "Prova Prime gratis" (solo con POST_STYLE = "bottoni")
 SITE_OFFERS_PER_PAGE = 60                    # offerte per pagina del sito
+# ------------------------------------------------------------------ Classifiche automatiche (con API)
+# Ogni classifica in content/classifiche/ con "auto: si" viene compilata dal bot con i prodotti
+# migliori trovati su Amazon (valutazioni, numero di recensioni, posizione in classifica vendite,
+# prezzo nella fascia indicata). Funziona solo quando sono attive le credenziali Creators API.
+RANK_REFRESH_DAYS = 7                        # ogni classifica si rifà ogni N giorni
+RANKS_PER_RUN = 1                            # classifiche ricalcolate a ogni giro (limite richieste)
+RANK_SIZE = 10                               # prodotti per classifica
+# Aggiornamento prezzi del sito (offerte e classifiche): al massimo una volta ogni N ore,
+# così i prezzi mostrati non superano mai PRICE_MAX_AGE_HOURS.
+PRICE_REFRESH_HOURS = 6
+PRICE_REFRESH_MAX_ASINS = 300                # 10 ASIN per richiesta: 300 = 30 richieste per aggiornamento
 # Filtro "prodotti veri" (solo offerte automatiche da API Amazon / eBay, non il CSV):
 # per ogni nicchia "min_price" = prezzo minimo in euro, "exclude_words" = parole che, se
 # compaiono nel titolo, fanno scartare il prodotto (ricambi, accessori). L'elenco generale
@@ -55,6 +66,7 @@ SITE_OFFERS_PER_PAGE = 60                    # offerte per pagina del sito
 HUB = {
     "channel": "@theoffersclub_hub",         # canale General (offerte dal 25% in su)
     "name": "TheOffersClub – Le migliori offerte",
+    "short": "TheOffersClub",                # nome breve per i bottoni del sito
     "color": "#c04dff",                      # colori del brand sul sito (viola e azzurro neon)
     "color2": "#2fa8ff",
     "logo": "hub",                           # immagine site_assets/img/hub-*.webp
