@@ -269,6 +269,8 @@ def main():
                 if count[nid] >= limit[nid]:
                     continue
                 niche = config.NICHES[nid]
+                if niche.get("post_note") and not o.get("note"):     # es. Moda: taglia e colore
+                    o["note"] = niche["post_note"]
                 res, text, mk = send(tg, niche["channel"], o, niche, tag)
                 if not res:
                     continue

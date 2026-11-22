@@ -6,8 +6,8 @@ I dati sensibili (token, chiavi) NON vanno qui: vanno nei Secrets di GitHub.
 BRAND = "TheOffersClub"                      # nome del brand (usato su sito e post)
 SITE_TITLE = "TheOffersClub – Le migliori offerte del giorno"
 SITE_TAGLINE = "Solo sconti veri, scelti ogni giorno."
-SITE_DESCRIPTION = ("Offerte Amazon selezionate ogni giorno su tecnologia, casa e cucina, "
-                    "utensili e cura della persona, con classifiche e guide all'acquisto.")
+SITE_DESCRIPTION = ("Offerte Amazon selezionate ogni giorno su tecnologia, casa e cucina, utensili, "
+                    "cura della persona, moda e bambini, con classifiche e guide all'acquisto.")
 # False finché il sito è sull'indirizzo gratuito di GitHub: Google non lo indicizza.
 # Mettere True SOLO dopo aver collegato il dominio definitivo (es. theoffersclub.it).
 SITE_INDEXABLE = False
@@ -43,7 +43,7 @@ LAMPO_MIN_DISCOUNT = 60                      # non usato (canale Lampo chiuso)
 PRICE_MAX_AGE_HOURS = 24                     # il sito non mostra prezzi più vecchi di N ore (regola Amazon)
 EXPIRE_AUTO_HOURS = 0                        # 0 = i post del CSV non scadono mai da soli
 TRACK_DAYS = 3                               # giorni in cui il bot ricontrolla i post via API
-AMAZON_SEARCHES_PER_ROUND = 3                # ricerche Creators API per giro (limite richieste)
+AMAZON_SEARCHES_PER_ROUND = 4                # ricerche Creators API per giro (6 canali: alzato da 3 a 4)
 PRIME_BUTTON = True                          # bottone "Prova Prime gratis" (solo con POST_STYLE = "bottoni")
 SITE_OFFERS_PER_PAGE = 60                    # offerte per pagina del sito
 # ------------------------------------------------------------------ Classifiche automatiche (con API)
@@ -61,8 +61,9 @@ PRICE_REFRESH_MAX_ASINS = 300                # 10 ASIN per richiesta: 300 = 30 r
 # per ogni nicchia "min_price" = prezzo minimo in euro, "exclude_words" = parole che, se
 # compaiono nel titolo, fanno scartare il prodotto (ricambi, accessori). L'elenco generale
 # (ricambio, compatibile con, adatto per, cover per, pellicola, usato...) è già nel bot.
-# Ogni nicchia ha lo STESSO numero di parole chiave (60): il bot sceglie le ricerche a caso
-# tra tutte, quindi così ogni canale viene cercato con la stessa frequenza.
+# Ogni nicchia ha lo STESSO numero di parole chiave (60) e di top_keywords (12): il bot sceglie
+# le ricerche a caso tra tutte, quindi così ogni canale viene cercato con la stessa frequenza.
+# "post_note" (facoltativo) = riga aggiunta ai post del canale quando il prodotto non ha già una nota.
 HUB = {
     "channel": "@theoffersclub_hub",         # canale General (offerte dal 25% in su)
     "name": "TheOffersClub – Le migliori offerte",
@@ -276,6 +277,103 @@ NICHES = {
         ],
         "ebay_queries": ["rasoio elettrico", "spazzolino elettrico", "asciugacapelli",
                          "profumo donna", "piastra capelli", "palette trucco"],
+    },
+    "moda": {
+        "name": "Moda & Scarpe",
+        "pinned_desc": "Sneakers, scarpe, abbigliamento uomo e donna, borse, zaini, orologi e occhiali dei marchi più amati, in sconto e selezionati ogni giorno.",
+        "color": "#ffc21a",
+        "logo": "moda",
+        "emoji": "👟",
+        "emojis": ["👟", "👠", "👕", "👖", "🧥", "👗", "👜", "🎒", "⌚", "🕶️", "🧢", "🧣"],
+        "channel": "@theoffersclub_moda",
+        "slug": "offerte-moda-scarpe",
+        "seo_title": "Offerte moda, scarpe e accessori di oggi",
+        "seo_intro": "Sneakers Nike, Adidas e New Balance, jeans, giacche, piumini, borse, zaini, orologi e occhiali in sconto, selezionati ogni giorno.",
+        "amazon_search_index": "All",
+        "min_price": 15,
+        "min_saving": 5,                          # risparmio minimo in euro
+        # Su moda lo sconto spesso vale solo per alcune taglie/colori: lo diciamo nel post
+        "post_note": "Prezzo e sconto possono variare in base a taglia e colore",
+        "top_keywords": ["nike air force 1", "adidas superstar", "new balance 574", "levi's 501",
+                         "calvin klein boxer", "tommy hilfiger polo", "the north face giacca",
+                         "piumino donna", "crocs", "ugg stivali", "orologio casio",
+                         "occhiali da sole ray-ban"],
+        "exclude_words": ["lacci", "solette", "plantari", "gruccia", "grucce", "appendiabiti",
+                          "custodia", "spazzola per scarpe", "lucido per scarpe", "cinturino di ricambio"],
+        "keywords": [
+            # Sneakers e scarpe (18)
+            "nike air force 1", "nike air max", "adidas superstar", "adidas stan smith",
+            "new balance 574", "puma sneakers", "converse chuck taylor", "vans old skool",
+            "skechers donna", "geox uomo", "timberland scarponcini", "dr martens stivali",
+            "crocs", "birkenstock", "scarpe running uomo", "scarpe running donna", "asics gel",
+            "ugg stivali",
+            # Uomo (14)
+            "levi's 501", "levi's jeans uomo", "tommy hilfiger polo", "ralph lauren polo",
+            "lacoste polo", "calvin klein boxer", "calvin klein t-shirt", "the north face giacca",
+            "columbia giacca", "piumino uomo", "felpa nike", "felpa champion",
+            "pantaloni tuta adidas", "camicia uomo",
+            # Donna (11)
+            "levi's jeans donna", "piumino donna", "cappotto donna", "vestito donna",
+            "leggings sportivi donna", "reggiseno sportivo", "pigiama donna", "maglione donna",
+            "guess borsa", "michael kors borsa", "borsa a tracolla donna",
+            # Accessori (10)
+            "zaino eastpak", "zaino the north face", "orologio casio", "orologio fossil",
+            "occhiali da sole ray-ban", "portafoglio uomo pelle", "cintura uomo pelle",
+            "cappello new era", "sciarpa", "guanti invernali",
+            # Altro (7)
+            "calzini sportivi", "intimo termico", "giacca a vento", "costume da bagno",
+            "valigia trolley", "samsonite trolley", "pigiama uomo",
+        ],
+        "ebay_queries": ["sneakers nike", "adidas superstar", "piumino", "zaino",
+                         "orologio casio", "levi's 501"],
+    },
+    "bimbi": {
+        "name": "Bimbi & Giocattoli",
+        "pinned_desc": "Pannolini e salviette, pappa, passeggini, seggiolini auto, baby monitor e giocattoli (LEGO, Playmobil, giochi da tavolo) in sconto, selezionati ogni giorno.",
+        "color": "#c8cfe0",
+        "logo": "bimbi",
+        "emoji": "🧸",
+        "emojis": ["🧸", "👶", "🍼", "🚼", "🎲", "🧩", "🎈", "🪀", "🚂", "🎨", "🧱", "⭐"],
+        "channel": "@theoffersclub_bimbi",
+        "slug": "offerte-bimbi-giocattoli",
+        "seo_title": "Offerte bambini, neonati e giocattoli di oggi",
+        "seo_intro": "Pannolini, salviette, passeggini, seggiolini auto, baby monitor, LEGO, Playmobil e giochi da tavolo in sconto, selezionati ogni giorno.",
+        "amazon_search_index": "All",
+        "min_price": 8,
+        "min_saving": 2,                          # risparmio minimo in euro
+        "top_keywords": ["pannolini pampers", "pannolini huggies", "salviette umidificate bambini",
+                         "mutandine pannolino", "seggiolino auto isofix", "passeggino",
+                         "baby monitor", "lego", "playmobil", "barbie", "hot wheels pista",
+                         "giochi da tavolo"],
+        "exclude_words": ["tettarelle", "adesivi per", "copertura per", "fodera per",
+                          "zanzariera per", "parasole per"],
+        "keywords": [
+            # Pannolini e igiene (10)
+            "pannolini pampers", "pannolini huggies", "pannolini taglia 4", "pannolini taglia 5",
+            "mutandine pannolino", "salviette umidificate bambini", "crema cambio pannolino",
+            "bagnoschiuma bambini", "fasciatoio", "vaschetta bagnetto",
+            # Pappa e allattamento (8)
+            "biberon", "scaldabiberon", "sterilizzatore biberon", "tiralatte elettrico",
+            "cuscino allattamento", "seggiolone pappa", "piatti bambini", "borraccia bambini",
+            # Passeggio e auto (8)
+            "passeggino", "passeggino leggero", "trio passeggino", "seggiolino auto isofix",
+            "seggiolino auto gruppo 2 3", "marsupio neonato", "fascia porta bebè",
+            "zaino porta bambino",
+            # Nanna e sicurezza (8)
+            "baby monitor", "baby monitor video", "culla neonato", "lettino da viaggio",
+            "sacco nanna", "lampada notturna bambini", "cancelletto sicurezza",
+            "dispositivo antiabbandono",
+            # Giocattoli (26)
+            "lego", "lego technic", "lego city", "lego friends", "lego duplo", "playmobil",
+            "barbie", "hot wheels pista", "peluche", "giochi da tavolo", "puzzle bambini",
+            "gioco educativo montessori", "bicicletta senza pedali", "monopattino bambini",
+            "triciclo", "cucina giocattolo", "nerf", "macchina telecomandata",
+            "trenino in legno", "palestrina neonato", "box gioco bambini",
+            "costruzioni magnetiche", "tablet bambini", "pista macchinine",
+            "gioco interattivo", "bambola",
+        ],
+        "ebay_queries": ["lego", "pannolini pampers", "passeggino", "seggiolino auto",
+                         "playmobil", "baby monitor"],
     },
 }
 # Parole nel titolo che fanno aggiungere l'avviso "batteria non inclusa"

@@ -1,5 +1,10 @@
 """Genera il sito statico (cartella public/).
 
+Grafica: parte alta (intestazione, presentazione, iscrizione al canale) e footer su sfondo scuro
+neon; contenuti (offerte, classifiche, testi) su sfondo chiaro.
+Immagini (site_assets/img/): <logo>-192.webp e <logo>-400.webp (tonde), <logo>-banner.webp
+(rettangolari, facoltative: se ci sono compaiono in alto nella home e nelle pagine dei canali).
+
 Struttura:
   /                              home: offerte top, canali, classifiche, guide
   /<slug-canale>/                offerte del canale + classifiche e guide del canale
@@ -75,6 +80,10 @@ def unique(history):
 
 def img(name, size=192):
     return f"img/{name}-{size}.webp"
+
+
+def has_banner(name):
+    return os.path.exists(os.path.join(ASSETS, "img", f"{name}-banner.webp"))
 
 
 def amazon_link(asin, tag):
@@ -264,9 +273,11 @@ class Site:
         return "".join(items)
 
     def page(self, path, title, desc, body, active="", color=None, crumbs=None,
-             index=True, schema=None, lastmod=None):
+             index=True, schema=None, lastmod=None, intro="", og=None):
+        """intro = parte alta su sfondo scuro; body = contenuti su sfondo chiaro."""
         url = self.abs(path)
         color = color or config.HUB["color"]
+        og_img = self.abs(og or "img/og.jpg")
         indexable = getattr(config, "SITE_INDEXABLE", False) and index
         robots = "index,follow" if indexable else "noindex,follow"
         ld = []
@@ -285,6 +296,7 @@ class Site:
             bc = f'<nav class="crumbs" aria-label="Percorso">{" › ".join(parts)}</nav>'
         if index and path != "404.html":
             self.sitemap.append((url, (lastmod or datetime.now(timezone.utc)).strftime("%Y-%m-%d")))
+        light = f'<div class="light"><div class="wrap">{body}</div></div>' if body else ""
         hub = config.HUB
         return f"""<!doctype html><html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -293,7 +305,7 @@ class Site:
 <meta name="theme-color" content="#0a0614">
 <meta property="og:type" content="website"><meta property="og:site_name" content="{e(config.BRAND)}">
 <meta property="og:title" content="{e(title)}"><meta property="og:description" content="{e(desc)}">
-<meta property="og:url" content="{url}"><meta property="og:image" content="{self.abs('img/og.jpg')}">
+<meta property="og:url" content="{url}"><meta property="og:image" content="{og_img}">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="{self.abs('img/favicon.png')}"><link rel="apple-touch-icon" href="{self.abs('img/apple-touch-icon.png')}">
 <link rel="stylesheet" href="{self.abs('style.css')}">{ld_html}
@@ -303,7 +315,7 @@ class Site:
 <span>The<b>Offers</b>Club</span></a>
 <a class="btn btn-tg small" href="{tg_link(hub['channel'])}">Telegram</a>
 </div><nav class="wrap nav">{self.head_nav(active)}</nav></header>
-<main class="wrap">{bc}{body}</main>
+<main><div class="intro"><div class="wrap">{bc}{intro}</div></div>{light}</main>
 <footer class="foot"><div class="wrap">
 <div class="foot-grid">
 <div><a class="brand" href="{self.abs('')}"><img src="{self.abs(img(hub['logo']))}" alt="" width="40" height="40"><span>The<b>Offers</b>Club</span></a>
@@ -425,10 +437,11 @@ def build(history, site_url, tag=""):
     arts = ranks + guides
     P = s.prices
 
+    def disc(o):
+        return (P.get(o.get("asin"), o) or {}).get("discount") or 0
+
     # ---------------- Home
-    top = [o for o in history if (P.get(o.get("asin"), o) or {}).get("discount", 0) or 0]
-    top = sorted([o for o in top if (P.get(o.get("asin"), o)["discount"] or 0) >= config.HUB_MIN_DISCOUNT],
-                 key=lambda o: P.get(o.get("asin"), o)["discount"], reverse=True)[:8]
+    top = sorted([o for o in history if disc(o) >= config.HUB_MIN_DISCOUNT], key=disc, reverse=True)[:8]
     tiles = "".join(
         f'<a class="tile" style="--c:{n["color"]}" href="{s.abs(n["slug"] + "/")}">'
         f'<img src="{s.abs(img(n["logo"], 400))}" alt="{e(n["name"])}" width="150" height="150">'
@@ -440,37 +453,49 @@ def build(history, site_url, tag=""):
         if offers:
             latest += (f'<section class="band" style="--c:{n["color"]}"><div class="band-h"><h2>{n["emoji"]} {e(n["name"])}</h2>'
                        f'<a href="{s.abs(n["slug"] + "/")}">Tutte →</a></div>{s.grid(offers)}</section>')
-    hero = (f'<section class="hero"><img src="{s.abs(img(config.HUB["logo"], 400))}" alt="{e(config.BRAND)}" width="210" height="210">'
-            f'<div><h1>Le migliori offerte di oggi, <span>scelte una per una</span></h1>'
+    hub_logo = config.HUB["logo"]
+    if has_banner(hub_logo):
+        hero_pic = f'<img class="bn" src="{s.abs(f"img/{hub_logo}-banner.webp")}" alt="{e(config.BRAND)}" width="1200" height="800">'
+        hero_cls = "hero wide"
+    else:
+        hero_pic = f'<img src="{s.abs(img(hub_logo, 400))}" alt="{e(config.BRAND)}" width="210" height="210">'
+        hero_cls = "hero"
+    hero = (f'<section class="{hero_cls}"><div class="hero-t"><h1>Le migliori offerte di oggi, <span>scelte una per una</span></h1>'
             f'<p>{e(config.SITE_DESCRIPTION)} Aggiornato il {today}.</p>'
             f'<div class="hero-b"><a class="btn btn-tg" href="{tg_link(config.HUB["channel"])}">Entra nel club su Telegram</a>'
-            f'<a class="btn ghost" href="#canali">Scegli la categoria</a></div></div></section>')
-    body = (hero
-            + (f'<section><h2>🔥 Sconti top di oggi</h2>{s.grid(top)}</section>' if top else "")
+            f'<a class="btn ghost" href="#canali">Scegli la categoria</a></div></div>{hero_pic}</section>')
+    body = ((f'<section><h2>🔥 Sconti top di oggi</h2>{s.grid(top)}</section>' if top else "")
             + f'<section id="canali"><h2>Scegli il tuo canale</h2><div class="tiles">{tiles}</div></section>'
             + latest
             + s.art_links(ranks[:8], "🏆 Classifiche")
             + s.art_links(guides[:6], "📚 Guide all'acquisto")
             + s.join())
     org = {"@context": "https://schema.org", "@type": "Organization", "name": config.BRAND, "url": s.abs(""),
-           "logo": s.abs(img(config.HUB["logo"], 400)), "sameAs": [tg_link(config.HUB["channel"])]}
-    write(os.path.join(OUT, "index.html"), s.page("", config.SITE_TITLE, config.SITE_DESCRIPTION, body, schema=org))
+           "logo": s.abs(img(hub_logo, 400)), "sameAs": [tg_link(config.HUB["channel"])]}
+    write(os.path.join(OUT, "index.html"),
+          s.page("", config.SITE_TITLE, config.SITE_DESCRIPTION, body, schema=org, intro=hero))
 
     # ---------------- Pagine canale
     for nid, n in config.NICHES.items():
         offers = [o for o in history if o["niche"] == nid][:config.SITE_OFFERS_PER_PAGE]
-        offers.sort(key=lambda o: ((P.get(o.get("asin"), o) or {}).get("discount") or 0), reverse=True)
+        offers.sort(key=disc, reverse=True)
         mine = [a for a in arts if a["niche"] == nid]
-        head = (f'<section class="cat-h" style="--c:{n["color"]}"><img src="{s.abs(img(n["logo"], 400))}" alt="" width="130" height="130">'
-                f'<div><h1>{e(n["seo_title"])}</h1><p>{e(n["seo_intro"])}</p>'
-                f'<p class="upd">Aggiornato il {today} · sconto minimo {config.MIN_DISCOUNT}%</p></div></section>')
-        body = (head + s.join(n)
-                + f'<section><h2>Offerte attive</h2>{s.grid(offers)}</section>'
+        txt = (f'<div class="cat-t"><h1>{e(n["seo_title"])}</h1><p>{e(n["seo_intro"])}</p>'
+               f'<p class="upd">Aggiornato il {today} · sconto minimo {config.MIN_DISCOUNT}%</p></div>')
+        og = None
+        if has_banner(n["logo"]):
+            og = f'img/{n["logo"]}-banner.webp'
+            head = (f'<section class="cat-h wide" style="--c:{n["color"]}">{txt}'
+                    f'<img class="bn" src="{s.abs(og)}" alt="{e(n["name"])}" width="1200" height="800"></section>')
+        else:
+            head = (f'<section class="cat-h" style="--c:{n["color"]}"><img src="{s.abs(img(n["logo"], 400))}" alt="" '
+                    f'width="130" height="130">{txt}</section>')
+        body = (f'<section><h2>Offerte attive</h2>{s.grid(offers)}</section>'
                 + s.art_links([a for a in mine if a["kind"] == "classifiche"], f"🏆 Classifiche {n['name']}")
                 + s.art_links([a for a in mine if a["kind"] == "guide"], f"📚 Guide {n['name']}"))
         write(os.path.join(OUT, n["slug"], "index.html"),
               s.page(n["slug"] + "/", f"{n['seo_title']} | {config.BRAND}", n["seo_intro"], body,
-                     active=nid, color=n["color"],
+                     active=nid, color=n["color"], intro=head + s.join(n), og=og,
                      crumbs=[("Home", ""), (n["name"], n["slug"] + "/")]))
 
     # ---------------- Classifiche e guide
@@ -504,10 +529,10 @@ def build(history, site_url, tag=""):
                 badge, price, stamp = s.price_html(pr)
                 url = o["url"] if o else amazon_link(asin, tag)
                 why_html = f'<p class="n">{e(why)}</p>' if why else ""
+                btn = "Vedi offerta" if pr else "Vedi su Amazon"
                 rows.append(f'<li><span class="num">{i}</span><div class="rpic">{s.picture(o.get("image") if o else "", name, logo)}{badge}</div>'
                             f'<div class="rtxt"><h3>{e(name or asin)}</h3>{why_html}<p class="pr">{price}</p>{stamp}</div>'
-                            f'<a class="btn" rel="sponsored nofollow noopener" target="_blank" href="{e(url)}">'
-                            f'{"Vedi offerta" if pr else "Vedi su Amazon"}</a></li>')
+                            f'<a class="btn" rel="sponsored nofollow noopener" target="_blank" href="{e(url)}">{btn}</a></li>')
                 items_ld.append({"@type": "ListItem", "position": i, "name": name or asin})
         plist = ""
         if rows:
@@ -525,9 +550,11 @@ def build(history, site_url, tag=""):
                      f'{s.grid(live)}</section>') if live else ""
         related = [x for x in arts if x is not a and x["niche"] == a["niche"]][:4]
         kind_label = "🏆 Classifica" if a["kind"] == "classifiche" else "📚 Guida all'acquisto"
-        body = (f'<article class="post" style="--c:{color}"><header class="post-h">'
-                f'<span class="k">{kind_label}</span>'
-                f'<h1>{e(a["title"])}</h1><p class="upd">Aggiornato il {a["mtime"].astimezone(ROME):%d/%m/%Y}</p></header>'
+        intro = (f'<header class="post-h" style="--c:{color}">'
+                 f'<span class="k">{kind_label}</span>'
+                 f'<h1>{e(a["title"])}</h1><p class="lead">{e(a["desc"])}</p>'
+                 f'<p class="upd">Aggiornato il {a["mtime"].astimezone(ROME):%d/%m/%Y}</p></header>')
+        body = (f'<article class="post" style="--c:{color}">'
                 + plist + live_html
                 + f'<div class="prose">{md_to_html(a["body"], tag)}</div>'
                 + "</article>" + s.join(n) + s.art_links(related, "Leggi anche"))
@@ -535,25 +562,29 @@ def build(history, site_url, tag=""):
         if items_ld:
             schema = {"@context": "https://schema.org", "@type": "ItemList", "name": a["title"],
                       "itemListElement": items_ld}
+        og = f"img/{logo}-banner.webp" if has_banner(logo) else None
         write(os.path.join(OUT, a["kind"], a["slug"], "index.html"),
               s.page(path, f"{a['title']} | {config.BRAND}", a["desc"], body, active=a["kind"],
-                     color=color, crumbs=crumbs, index=a["indexable"], schema=schema, lastmod=a["mtime"]))
+                     color=color, crumbs=crumbs, index=a["indexable"], schema=schema, lastmod=a["mtime"],
+                     intro=intro, og=og))
 
-    for kind, label, intro, lst in (
+    for kind, label, lead, lst in (
             ("classifiche", "Classifiche", "I prodotti migliori per categoria e fascia di prezzo, con le offerte attive.", ranks),
             ("guide", "Guide all'acquisto", "Cosa guardare prima di comprare: spiegato semplice.", guides)):
         groups = ""
         for nid, n in config.NICHES.items():
             groups += s.art_links([a for a in lst if a["niche"] == nid], f'{n["emoji"]} {n["name"]}')
         groups += s.art_links([a for a in lst if not a["niche"]], "Altro")
-        body = (f'<section class="post-h"><h1>{label}</h1><p>{e(intro)}</p></section>'
-                + (groups or '<p class="empty">In arrivo.</p>') + s.join())
+        top_html = f'<section class="post-h"><h1>{label}</h1><p class="lead">{e(lead)}</p></section>'
+        body = (groups or '<p class="empty">In arrivo.</p>') + s.join()
         write(os.path.join(OUT, kind, "index.html"),
-              s.page(kind + "/", f"{label} | {config.BRAND}", intro, body, active=kind,
-                     crumbs=[("Home", ""), (label, kind + "/")], index=bool(lst)))
+              s.page(kind + "/", f"{label} | {config.BRAND}", lead, body, active=kind,
+                     crumbs=[("Home", ""), (label, kind + "/")], index=bool(lst), intro=top_html))
 
     # ---------------- Come funziona
-    how = f"""<article class="post"><header class="post-h"><h1>Come selezioniamo le offerte</h1></header><div class="prose">
+    how_intro = ('<header class="post-h"><h1>Come selezioniamo le offerte</h1>'
+                 '<p class="lead">Criteri, automazione e affiliazione, spiegati in modo trasparente.</p></header>')
+    how = f"""<article class="post"><div class="prose">
 <p>{e(config.BRAND)} segnala ogni giorno prodotti in sconto su Amazon, divisi per categoria, sul sito e sui canali Telegram.</p>
 <h2>Le offerte</h2><ul>
 <li>Nei canali tematici pubblichiamo solo offerte con almeno il <strong>{config.MIN_DISCOUNT}% di sconto</strong>; nel canale principale solo quelle dal <strong>{config.HUB_MIN_DISCOUNT}%</strong> in su.</li>
@@ -566,13 +597,13 @@ def build(history, site_url, tag=""):
     write(os.path.join(OUT, "come-funziona", "index.html"),
           s.page("come-funziona/", f"Come selezioniamo le offerte | {config.BRAND}",
                  "Criteri di selezione delle offerte e delle classifiche, automazione e affiliazione Amazon.", how,
-                 crumbs=[("Home", ""), ("Come funziona", "come-funziona/")]))
+                 intro=how_intro, crumbs=[("Home", ""), ("Come funziona", "come-funziona/")]))
 
     # ---------------- 404, sitemap, robots
     write(os.path.join(OUT, "404.html"),
-          s.page("404.html", f"Pagina non trovata | {config.BRAND}", "Pagina non trovata",
-                 "<section class=\"post-h\"><h1>Pagina non trovata</h1><p>L'offerta potrebbe essere terminata.</p>"
-                 f'<a class="btn" href="{s.abs("")}">Torna alle offerte</a></section>', index=False))
+          s.page("404.html", f"Pagina non trovata | {config.BRAND}", "Pagina non trovata", "", index=False,
+                 intro="<section class=\"post-h\"><h1>Pagina non trovata</h1><p class=\"lead\">L'offerta potrebbe essere terminata.</p>"
+                       f'<a class="btn btn-tg" href="{s.abs("")}">Torna alle offerte</a></section>'))
     sm = "".join(f"<url><loc>{u}</loc><lastmod>{d}</lastmod></url>" for u, d in s.sitemap)
     write(os.path.join(OUT, "sitemap.xml"),
           f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{sm}</urlset>')
