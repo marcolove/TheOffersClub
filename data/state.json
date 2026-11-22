@@ -5,14 +5,14 @@
   "amz:B09GVHN99N": "2026-11-18T15:24:07.620795+00:00",
   "amz:B0F22BB4BV": "2026-11-18T15:41:39.230880+00:00"
  },
- "hub_pin_id": 10,
+ "hub_pin_id": null,
  "live": {},
  "pins": {
-  "tech": 3,
-  "casa": 48,
-  "utensili": 4,
-  "persona": 3,
-  "moda": 2,
-  "bimbi": 2
+  "tech": null,
+  "casa": null,
+  "utensili": null,
+  "persona": null,
+  "moda": null,
+  "bimbi": null
  }
 }
