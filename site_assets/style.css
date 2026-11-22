@@ -191,6 +191,18 @@ s{color:var(--lmuted);font-size:.9rem}
 .disc{margin-top:26px;font-size:.8rem!important}
 .copy{font-size:.8rem!important}
 
+/* ================= ICONE CANALI SAGOMATE (senza sfondo) =================
+   Le icone dei canali (tech, casa, utensili, persona, moda, bimbi) hanno forme diverse
+   e sfondo trasparente: niente ritaglio tondo, solo un alone del colore del canale.
+   Il logo dell'Hub resta tondo. */
+img[src$="-192.webp"]:not([src*="/hub-"]),
+img[src$="-400.webp"]:not([src*="/hub-"]){
+  border-radius:0!important;object-fit:contain;box-shadow:none!important;opacity:1!important}
+.nav a img[src$="-192.webp"]:not([src*="/hub-"]){filter:drop-shadow(0 0 3px color-mix(in srgb,var(--c) 70%,transparent))}
+.tile img[src$="-400.webp"]:not([src*="/hub-"]){filter:drop-shadow(0 4px 10px rgba(30,20,60,.18))}
+.join img[src$="-192.webp"]:not([src*="/hub-"]){filter:drop-shadow(0 0 8px color-mix(in srgb,var(--c) 60%,transparent))}
+.pic img.ph[src$="-192.webp"]:not([src*="/hub-"]){max-height:72%;max-width:72%}
+
 /* ================= MOBILE ================= */
 @media (max-width:860px){
   .hero.wide,.cat-h.wide{grid-template-columns:1fr;gap:16px}
