@@ -36,9 +36,11 @@ TOP_KEYWORD_WEIGHT = 3
 MIN_POSTS_PER_NICHE_PER_RUN = 0              # post per canale a ogni giro: da...
 MAX_POSTS_PER_NICHE_PER_RUN = 1              # ...a (numero casuale)
 REPOST_AFTER_DAYS = 10                       # non ripubblicare lo stesso prodotto prima di N giorni
-MIN_DISCOUNT = 15                            # sconto minimo % nei canali tematici
+MIN_DISCOUNT = 25                            # sconto minimo % nei canali tematici
 MIN_SAVING_VALUE = 5                         # risparmio minimo in euro (-1 = disattivato); per nicchia: "min_saving"
-HUB_MIN_DISCOUNT = 25                        # sconto minimo % per uscire anche nel General
+HUB_MIN_DISCOUNT = 35                        # sconto minimo % per uscire anche nel General
+MIN_RATING = 4.0                             # valutazione minima Amazon (offerte automatiche)
+MIN_REVIEWS = 20                             # recensioni minime (4,8 stelle con 3 voti non vale)
 LAMPO_MIN_DISCOUNT = 60                      # non usato (canale Lampo chiuso)
 PRICE_MAX_AGE_HOURS = 24                     # il sito non mostra prezzi più vecchi di N ore (regola Amazon)
 EXPIRE_AUTO_HOURS = 0                        # 0 = i post del CSV non scadono mai da soli
