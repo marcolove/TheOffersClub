@@ -361,8 +361,7 @@ def format_niche_pinned(niche, site_url):
     desc = niche.get("pinned_desc") or niche.get("seo_intro", "")
     if desc:
         lines += ["", e(desc)]
-    lines += ["", f"✅ Pubblichiamo solo offerte con almeno il {config.MIN_DISCOUNT}% di sconto, "
-                  "tutti i giorni dalle 8 alle 23."]
+    lines += ["", f"✅ Solo offerte con almeno il {config.MIN_DISCOUNT}% di sconto, selezionate ogni giorno."]
     lines += ["", "🔔 Attiva le notifiche per non perdere le offerte migliori."]
     if site_url and getattr(config, "SHOW_SITE_IN_PINNED", False):
         page = f"{site_url}/{niche['slug']}/"

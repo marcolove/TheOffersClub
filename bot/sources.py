@@ -25,7 +25,7 @@ ROME = ZoneInfo("Europe/Rome")
 def _offer(**kw):
     base = {"key": "", "source": "", "origin": "", "asin": "", "niche": "", "title": "", "url": "",
             "image": "", "price": None, "old_price": None, "discount": None, "note": "", "brand": "",
-            "manual_price": False, "preview_url": "", "price_date": ""}
+            "manual_price": False, "preview_url": "", "price_date": "", "rating": None, "reviews": None}
     base.update(kw)
     return base
 
@@ -93,6 +93,21 @@ def api_available(tag):
     return bool(_api(tag))
 
 
+def rating_ok(o):
+    """Filtro valutazioni (solo offerte automatiche):
+    - valutazione nota e sotto MIN_RATING -> scartata
+    - numero di recensioni noto e sotto MIN_REVIEWS -> scartata
+    - dato non fornito dall'API -> l'offerta passa (lo segnala il log)."""
+    min_r = getattr(config, "MIN_RATING", 0) or 0
+    min_n = getattr(config, "MIN_REVIEWS", 0) or 0
+    r, n = o.get("rating"), o.get("reviews")
+    if r is not None and r < min_r:
+        return False
+    if n is not None and n < min_n:
+        return False
+    return True
+
+
 def from_amazon_api(tag):
     api = _api(tag)
     if not api:
@@ -100,7 +115,7 @@ def from_amazon_api(tag):
         return []
     # Poche ricerche per giro: il limite di richieste dipende dalle vendite fatte via API
     n = getattr(config, "AMAZON_SEARCHES_PER_ROUND", 3)
-    offers = []
+    offers, low_rated, no_rating = [], 0, 0
     for niche_id, kw in pick_searches(n):
         niche = config.NICHES[niche_id]
         try:
@@ -113,10 +128,17 @@ def from_amazon_api(tag):
             continue
         for it in items:
             o = _parse_amazon_item(it, niche_id, tag)
-            if o:
-                offers.append(o)
+            if not o:
+                continue
+            if o["rating"] is None:
+                no_rating += 1
+            if not rating_ok(o):
+                low_rated += 1
+                continue
+            offers.append(o)
         time.sleep(1.1)                             # massimo 1 richiesta al secondo
-    print(f"[amazon-api] trovate {len(offers)} offerte")
+    print(f"[amazon-api] trovate {len(offers)} offerte · scartate per valutazione/recensioni: {low_rated}"
+          f" · senza valutazione dall'API: {no_rating}")
     return offers
 
 
@@ -203,7 +225,7 @@ def amazon_search_ranked(tag, keywords, search_index="All", pages=2):
             disc = _g(lst, "price.savings.percentage")
             if disc is None and old and old > price:
                 disc = round((1 - price / old) * 100)
-            out.append({
+            p = {
                 "asin": it.asin, "title": title, "position": pos,
                 "url": getattr(it, "detail_page_url", None) or amazon_link(it.asin, tag),
                 "image": _g(it, "images.primary.large.url") or "",
@@ -213,7 +235,10 @@ def amazon_search_ranked(tag, keywords, search_index="All", pages=2):
                 "rating": _num_or_none(_g(it, "customer_reviews.star_rating.value")),
                 "reviews": _num_or_none(_g(it, "customer_reviews.count")),
                 "sales_rank": _num_or_none(_g(it, "browse_node_info.website_sales_rank.sales_rank")),
-            })
+            }
+            if not rating_ok(p):                     # stessa soglia delle offerte (es. 4 stelle)
+                continue
+            out.append(p)
         time.sleep(1.1)
     return out
 
@@ -262,7 +287,9 @@ def _parse_amazon_item(it, niche_id, tag):
                   title=title, url=url, preview_url=url,
                   image=_g(it, "images.primary.large.url") or "", price=float(price),
                   old_price=float(old) if old else None, discount=int(disc) if disc else None,
-                  brand=brand, price_date=today_label())
+                  brand=brand, price_date=today_label(),
+                  rating=_num_or_none(_g(it, "customer_reviews.star_rating.value")),
+                  reviews=_num_or_none(_g(it, "customer_reviews.count")))
 
 
 # --------------------------------------------------------------------------- Lista prodotti (CSV)

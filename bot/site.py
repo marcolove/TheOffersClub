@@ -2,11 +2,11 @@
 
 Grafica: parte alta (intestazione, presentazione, iscrizione al canale) e footer su sfondo scuro
 neon; contenuti (offerte, classifiche, testi) su sfondo chiaro.
-Immagini (site_assets/img/): <logo>-192.webp e <logo>-400.webp (tonde), <logo>-banner.webp
+Immagini (site_assets/img/): <logo>-192.webp e <logo>-400.webp (icone), <logo>-banner.webp
 (rettangolari, facoltative: se ci sono compaiono in alto nella home e nelle pagine dei canali).
 
 Struttura:
-  /                              home: offerte top, canali, classifiche, guide
+  /                              home: offerte top, canali (+ canale generale), classifiche, guide
   /<slug-canale>/                offerte del canale + classifiche e guide del canale
   /classifiche/                  elenco classifiche
   /classifiche/<slug>/           classifica (content/classifiche/*.md) + offerte attive collegate
@@ -383,6 +383,15 @@ class Site:
                 f'<div class="join-t"><strong>{txt}</strong><p>Gratis, senza spam, si esce con un clic.</p></div>'
                 f'<div class="join-b"><a class="btn btn-tg" href="{tg_link(ch)}">{btn}</a>{folder}</div></aside>')
 
+    def hub_tile(self):
+        """Riquadro del canale generale, sotto i canali tematici (porta al canale Telegram)."""
+        h = config.HUB
+        return (f'<a class="tile tile-hub" style="--c:{h["color"]}" href="{tg_link(h["channel"])}">'
+                f'<img src="{self.abs(img(h["logo"], 400))}" alt="{e(h["name"])}" width="110" height="110">'
+                f'<div class="hub-t"><strong>Canale generale · {e(h.get("short", config.BRAND))}</strong>'
+                f'<span>Solo gli sconti migliori di tutte le categorie, dal {config.HUB_MIN_DISCOUNT}% in su.</span>'
+                f'<em>Unisciti su Telegram →</em></div></a>')
+
     def art_links(self, arts, title):
         if not arts:
             return ""
@@ -446,7 +455,7 @@ def build(history, site_url, tag=""):
         f'<a class="tile" style="--c:{n["color"]}" href="{s.abs(n["slug"] + "/")}">'
         f'<img src="{s.abs(img(n["logo"], 400))}" alt="{e(n["name"])}" width="150" height="150">'
         f'<strong>{e(n["name"])}</strong><span>{e(n["pinned_desc"][:90].rsplit(" ", 1)[0])}…</span></a>'
-        for n in config.NICHES.values())
+        for n in config.NICHES.values()) + s.hub_tile()
     latest = ""
     for nid, n in config.NICHES.items():
         offers = [o for o in history if o["niche"] == nid][:4]
@@ -582,12 +591,20 @@ def build(history, site_url, tag=""):
                      crumbs=[("Home", ""), (label, kind + "/")], index=bool(lst), intro=top_html))
 
     # ---------------- Come funziona
+    min_r = getattr(config, "MIN_RATING", 0) or 0
+    min_n = getattr(config, "MIN_REVIEWS", 0) or 0
+    rating_li = ""
+    if min_r or min_n:
+        r_txt = f"valutazione media di almeno <strong>{str(min_r).replace('.', ',')} stelle</strong>" if min_r else ""
+        n_txt = f"almeno <strong>{min_n} recensioni</strong>" if min_n else ""
+        rating_li = f"<li>Le offerte trovate in automatico devono avere {' e '.join(x for x in (r_txt, n_txt) if x)} su Amazon.</li>"
     how_intro = ('<header class="post-h"><h1>Come selezioniamo le offerte</h1>'
                  '<p class="lead">Criteri, automazione e affiliazione, spiegati in modo trasparente.</p></header>')
     how = f"""<article class="post"><div class="prose">
 <p>{e(config.BRAND)} segnala ogni giorno prodotti in sconto su Amazon, divisi per categoria, sul sito e sui canali Telegram.</p>
 <h2>Le offerte</h2><ul>
-<li>Nei canali tematici pubblichiamo solo offerte con almeno il <strong>{config.MIN_DISCOUNT}% di sconto</strong>; nel canale principale solo quelle dal <strong>{config.HUB_MIN_DISCOUNT}%</strong> in su.</li>
+<li>Nei canali tematici pubblichiamo solo offerte con almeno il <strong>{config.MIN_DISCOUNT}% di sconto</strong>; nel canale generale solo quelle dal <strong>{config.HUB_MIN_DISCOUNT}%</strong> in su.</li>
+{rating_li}
 <li>Scartiamo ricambi, accessori generici e prodotti sotto una soglia minima di prezzo e di risparmio.</li>
 <li>Lo stesso prodotto non viene ripubblicato prima di {config.REPOST_AFTER_DAYS} giorni.</li>
 <li>Sul sito un prezzo compare solo se è stato rilevato nelle ultime {config.PRICE_MAX_AGE_HOURS} ore, con data e ora del controllo.</li>
