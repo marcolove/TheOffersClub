@@ -5,11 +5,19 @@ Fonti delle offerte.
    scadenza e terminata facoltativi
  - eBay Browse API (facoltativa, prezzi reali da subito)
 Ogni fonte restituisce offerte nello STESSO formato: il post che ne esce è identico.
+
+Note Creators API (documentazione ufficiale):
+ - la risposta NON contiene valutazioni né numero di recensioni: il filtro sulle stelle si fa
+   nella RICHIESTA con minReviewsRating (4 = da 4 stelle in su);
+ - lo sconto minimo si chiede ad Amazon con minSavingPercent, così non si sprecano richieste;
+ - ogni ricerca usa la categoria Amazon.it più adatta alla parola chiave (vedi INDEX_RULES):
+   risultati più pertinenti. Se una categoria dà errore si riprova in "All".
 """
 import base64
 import csv
 import os
 import random
+import re
 import time
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -25,7 +33,7 @@ ROME = ZoneInfo("Europe/Rome")
 def _offer(**kw):
     base = {"key": "", "source": "", "origin": "", "asin": "", "niche": "", "title": "", "url": "",
             "image": "", "price": None, "old_price": None, "discount": None, "note": "", "brand": "",
-            "manual_price": False, "preview_url": "", "price_date": "", "rating": None, "reviews": None}
+            "manual_price": False, "preview_url": "", "price_date": ""}
     base.update(kw)
     return base
 
@@ -36,6 +44,116 @@ def amazon_link(asin, tag):
 
 def today_label():
     return datetime.now(ROME).strftime("%d/%m")
+
+
+# --------------------------------------------------------------------------- categorie Amazon.it
+# Regole per canale: (inizio di parola nella parola chiave, categoria Amazon.it). Vince la prima
+# regola che corrisponde; "*" = categoria per tutte le altre parole del canale; se nessuna regola
+# corrisponde si usa "amazon_search_index" del canale in config.py (di solito "All").
+# Categorie valide su Amazon.it: Electronics, Computers, VideoGames, HomeAndKitchen, Lighting,
+# ToolsAndHomeImprovement, GardenAndOutdoor, Automotive, Beauty, HealthPersonalCare, Fashion,
+# Shoes, Watches, Luggage, Baby, ToysAndGames, GroceryAndGourmetFood ...
+# Per forzare una parola chiave: in config.py, dentro il canale, "keyword_index": {"parola": "Categoria"}.
+INDEX_RULES = {
+    "tech": [
+        ("console", "VideoGames"), ("controller", "VideoGames"), ("nintendo", "VideoGames"),
+        ("ps5", "VideoGames"), ("xbox", "VideoGames"), ("visore vr", "VideoGames"),
+        ("sedia gaming", "VideoGames"),
+        ("notebook", "Computers"), ("laptop", "Computers"), ("mini pc", "Computers"),
+        ("pc desktop", "Computers"), ("alimentatore pc", "Computers"), ("monitor", "Computers"),
+        ("ssd", "Computers"), ("hard disk", "Computers"), ("memoria ram", "Computers"),
+        ("scheda video", "Computers"), ("mouse", "Computers"), ("tastiera", "Computers"),
+        ("webcam", "Computers"), ("docking", "Computers"), ("stampante", "Computers"),
+        ("router", "Computers"), ("mesh wifi", "Computers"), ("ripetitore", "Computers"),
+        ("cuffie", "Electronics"), ("auricolari", "Electronics"), ("soundbar", "Electronics"),
+        ("cassa bluetooth", "Electronics"), ("smartphone", "Electronics"), ("tablet", "Electronics"),
+        ("ebook", "Electronics"), ("powerbank", "Electronics"), ("caricatore", "Electronics"),
+        ("smartwatch", "Electronics"), ("smartband", "Electronics"), ("action cam", "Electronics"),
+        ("fotocamera", "Electronics"), ("drone", "Electronics"), ("smart tv", "Electronics"),
+        ("proiettore", "Electronics"), ("echo dot", "Electronics"), ("fire tv", "Electronics"),
+        ("chromecast", "Electronics"), ("microfono", "Electronics"),
+    ],
+    "casa": [
+        ("luci led", "Lighting"), ("pile", "Electronics"),
+        ("friggitrice", "HomeAndKitchen"), ("macchina caff", "HomeAndKitchen"),
+        ("montalatte", "HomeAndKitchen"), ("bollitore", "HomeAndKitchen"),
+        ("tostapane", "HomeAndKitchen"), ("frullatore", "HomeAndKitchen"),
+        ("robot da cucina", "HomeAndKitchen"), ("planetaria", "HomeAndKitchen"),
+        ("estrattore", "HomeAndKitchen"), ("macchina sottovuoto", "HomeAndKitchen"),
+        ("forno", "HomeAndKitchen"), ("fornetto", "HomeAndKitchen"), ("multicooker", "HomeAndKitchen"),
+        ("macinacaff", "HomeAndKitchen"), ("set pentole", "HomeAndKitchen"), ("padella", "HomeAndKitchen"),
+        ("set coltelli", "HomeAndKitchen"), ("contenitori", "HomeAndKitchen"),
+        ("bilancia da cucina", "HomeAndKitchen"), ("borraccia", "HomeAndKitchen"),
+        ("robot aspirapolvere", "HomeAndKitchen"), ("aspirapolvere", "HomeAndKitchen"),
+        ("lavapavimenti", "HomeAndKitchen"), ("pulitore a vapore", "HomeAndKitchen"),
+        ("lavavetri", "HomeAndKitchen"), ("deumidificatore", "HomeAndKitchen"),
+        ("purificatore", "HomeAndKitchen"), ("condizionatore", "HomeAndKitchen"),
+        ("ventilatore", "HomeAndKitchen"), ("stufetta", "HomeAndKitchen"),
+        ("umidificatore", "HomeAndKitchen"), ("ferro", "HomeAndKitchen"), ("stiratore", "HomeAndKitchen"),
+        ("materasso", "HomeAndKitchen"), ("cuscino", "HomeAndKitchen"), ("set lenzuola", "HomeAndKitchen"),
+        ("piumone", "HomeAndKitchen"),
+        # consumabili (detersivi, capsule, carta): restano in "All", sono divisi tra più categorie
+    ],
+    "utensili": [
+        ("idropulitrice", "All"),
+        ("avviatore", "Automotive"), ("caricabatterie auto", "Automotive"),
+        ("compressore auto", "Automotive"), ("cric", "Automotive"), ("lucidatrice auto", "Automotive"),
+        ("aspirapolvere auto", "Automotive"),
+        ("tagliaerba", "GardenAndOutdoor"), ("robot tagliaerba", "GardenAndOutdoor"),
+        ("decespugliatore", "GardenAndOutdoor"), ("tagliasiepi", "GardenAndOutdoor"),
+        ("motosega", "GardenAndOutdoor"), ("soffiatore", "GardenAndOutdoor"),
+        ("potatore", "GardenAndOutdoor"),
+        ("*", "ToolsAndHomeImprovement"),
+    ],
+    "persona": [
+        ("rasoio", "HealthPersonalCare"), ("regolabarba", "HealthPersonalCare"),
+        ("tagliacapelli", "HealthPersonalCare"), ("epilatore", "HealthPersonalCare"),
+        ("luce pulsata", "HealthPersonalCare"), ("spazzolino", "HealthPersonalCare"),
+        ("idropulsore", "HealthPersonalCare"), ("kit sbiancamento", "HealthPersonalCare"),
+        ("misuratore", "HealthPersonalCare"), ("bilancia", "HealthPersonalCare"),
+        ("pistola massaggiante", "HealthPersonalCare"), ("proteine", "HealthPersonalCare"),
+        ("creatina", "HealthPersonalCare"), ("integratore", "HealthPersonalCare"),
+        ("collagene", "HealthPersonalCare"), ("kit cura barba", "HealthPersonalCare"),
+        ("*", "Beauty"),
+    ],
+    "moda": [
+        ("orologio", "Watches"), ("zaino", "Luggage"), ("valigia", "Luggage"), ("samsonite", "Luggage"),
+        ("guess borsa", "Shoes"), ("michael kors", "Shoes"), ("borsa", "Shoes"),
+        ("scarpe", "Shoes"), ("sneakers", "Shoes"), ("nike air", "Shoes"), ("adidas superstar", "Shoes"),
+        ("adidas stan smith", "Shoes"), ("new balance", "Shoes"), ("converse", "Shoes"),
+        ("vans", "Shoes"), ("skechers", "Shoes"), ("geox", "Shoes"), ("timberland", "Shoes"),
+        ("dr martens", "Shoes"), ("crocs", "Shoes"), ("birkenstock", "Shoes"), ("asics", "Shoes"),
+        ("ugg", "Shoes"),
+        ("*", "Fashion"),
+    ],
+    "bimbi": [
+        ("tablet bambini", "All"),
+        ("lego", "ToysAndGames"), ("playmobil", "ToysAndGames"), ("barbie", "ToysAndGames"),
+        ("hot wheels", "ToysAndGames"), ("peluche", "ToysAndGames"), ("giochi", "ToysAndGames"),
+        ("gioco", "ToysAndGames"), ("puzzle", "ToysAndGames"), ("bicicletta", "ToysAndGames"),
+        ("monopattino", "ToysAndGames"), ("triciclo", "ToysAndGames"), ("cucina giocattolo", "ToysAndGames"),
+        ("nerf", "ToysAndGames"), ("macchina telecomandata", "ToysAndGames"), ("trenino", "ToysAndGames"),
+        ("costruzioni", "ToysAndGames"), ("pista", "ToysAndGames"), ("bambola", "ToysAndGames"),
+        ("box gioco", "ToysAndGames"),
+        ("*", "Baby"),
+    ],
+}
+
+
+def search_index(niche_id, keyword):
+    """Categoria Amazon.it per una ricerca (vedi INDEX_RULES)."""
+    niche = config.NICHES.get(niche_id, {})
+    kw = keyword.lower().strip()
+    forced = niche.get("keyword_index", {})
+    if kw in forced:
+        return forced[kw]
+    default = None
+    for start, idx in INDEX_RULES.get(niche_id, []):
+        if start == "*":
+            default = idx
+        elif re.search(r"(?<!\w)" + re.escape(start), kw):
+            return idx
+    return default or niche.get("amazon_search_index", "All")
 
 
 # --------------------------------------------------------------------------- scelta delle ricerche
@@ -93,19 +211,46 @@ def api_available(tag):
     return bool(_api(tag))
 
 
-def rating_ok(o):
-    """Filtro valutazioni (solo offerte automatiche):
-    - valutazione nota e sotto MIN_RATING -> scartata
-    - numero di recensioni noto e sotto MIN_REVIEWS -> scartata
-    - dato non fornito dall'API -> l'offerta passa (lo segnala il log)."""
-    min_r = getattr(config, "MIN_RATING", 0) or 0
-    min_n = getattr(config, "MIN_REVIEWS", 0) or 0
-    r, n = o.get("rating"), o.get("reviews")
-    if r is not None and r < min_r:
-        return False
-    if n is not None and n < min_n:
-        return False
-    return True
+def _filters(min_discount=None):
+    """Filtri lato Amazon per SearchItems.
+    - min_reviews_rating: stelle minime (intero 1-4; 4 = da 4 stelle in su)
+    - min_saving_percent: sconto minimo (Amazon restituisce solo prodotti scontati)."""
+    f = {}
+    r = getattr(config, "MIN_RATING", 0) or 0
+    if r:
+        f["min_reviews_rating"] = max(1, min(4, int(r)))
+    if min_discount:
+        f["min_saving_percent"] = int(min_discount)
+    return f
+
+
+_FILTERS_OK = True          # diventa False se la libreria non accetta i filtri
+
+
+def _search(api, **kw):
+    """search_items con filtri e categoria.
+    - se la libreria non accetta i filtri, riprova senza (avviso nel log, una volta sola);
+    - se la categoria dà errore, riprova in "All"."""
+    global _FILTERS_OK
+    extra = kw.pop("_filters", {})
+    if not (extra and _FILTERS_OK):
+        extra = {}
+    try:
+        return api.search_items(**kw, **extra)
+    except TypeError as e:
+        if not extra:
+            raise
+        _FILTERS_OK = False
+        print(f"[amazon-api] ATTENZIONE: filtri stelle/sconto non accettati dalla libreria ({e}): "
+              f"ricerca senza filtri")
+        return api.search_items(**kw)
+    except Exception as e:
+        if kw.get("search_index", "All") == "All":
+            raise
+        print(f"[amazon-api] categoria {kw['search_index']} non valida per '{kw.get('keywords')}' "
+              f"({e}): riprovo in All")
+        kw["search_index"] = "All"
+        return api.search_items(**kw, **extra)
 
 
 def from_amazon_api(tag):
@@ -115,30 +260,26 @@ def from_amazon_api(tag):
         return []
     # Poche ricerche per giro: il limite di richieste dipende dalle vendite fatte via API
     n = getattr(config, "AMAZON_SEARCHES_PER_ROUND", 3)
-    offers, low_rated, no_rating = [], 0, 0
+    flt = _filters(getattr(config, "MIN_DISCOUNT", 0))
+    offers = []
     for niche_id, kw in pick_searches(n):
-        niche = config.NICHES[niche_id]
+        idx = search_index(niche_id, kw)
         try:
-            # Nessun filtro di sconto lato Amazon: lo sconto minimo si applica dopo, in main.py.
-            res = api.search_items(keywords=kw, search_index=niche.get("amazon_search_index", "All"),
-                                   item_count=10)
+            res = _search(api, keywords=kw, search_index=idx, item_count=10, _filters=flt)
             items = getattr(res, "items", None) or []
         except Exception as e:                      # nessun risultato o limite superato
-            print(f"[amazon-api] {niche_id}/{kw}: {e}")
+            print(f"[amazon-api] {niche_id}/{kw} [{idx}]: {e}")
             continue
+        n_ok = 0
         for it in items:
             o = _parse_amazon_item(it, niche_id, tag)
-            if not o:
-                continue
-            if o["rating"] is None:
-                no_rating += 1
-            if not rating_ok(o):
-                low_rated += 1
-                continue
-            offers.append(o)
+            if o:
+                offers.append(o)
+                n_ok += 1
+        print(f"[amazon-api] {niche_id}/{kw} [{idx}]: {n_ok} prodotti")
         time.sleep(1.1)                             # massimo 1 richiesta al secondo
-    print(f"[amazon-api] trovate {len(offers)} offerte · scartate per valutazione/recensioni: {low_rated}"
-          f" · senza valutazione dall'API: {no_rating}")
+    print(f"[amazon-api] trovate {len(offers)} offerte"
+          f"{' (filtri Amazon: ' + str(flt) + ')' if flt and _FILTERS_OK else ''}")
     return offers
 
 
@@ -191,19 +332,22 @@ def amazon_current_prices(asins, tag):
     return {a: (d["price"] if d else 0.0) for a, d in amazon_offer_details(asins, tag).items()}
 
 
-def amazon_search_ranked(tag, keywords, search_index="All", pages=2):
-    """Prodotti per le classifiche: fino a 10 x pages risultati, con i dati utili al punteggio
-    (valutazione, recensioni, posizione nelle vendite). I campi non forniti dall'API restano None."""
+def amazon_search_ranked(tag, keywords, niche_id="", pages=2):
+    """Prodotti per le classifiche: fino a 10 x pages risultati, nella categoria Amazon.it adatta.
+    Stelle minime filtrate da Amazon (minReviewsRating); ordine per valutazioni medie
+    (sortBy AvgCustomerReviews) se accettato, altrimenti quello di Amazon."""
     api = _api(tag)
     if not api:
         return []
+    flt = _filters()
+    idx = search_index(niche_id, keywords) if niche_id else "All"
     out, pos = [], 0
     for page in range(1, pages + 1):
         res = None
         for extra in ({"sort_by": "AvgCustomerReviews"}, {}):   # se l'ordinamento non è accettato, senza
             try:
-                res = api.search_items(keywords=keywords, search_index=search_index, item_count=10,
-                                       item_page=page, **extra)
+                res = _search(api, keywords=keywords, search_index=idx, item_count=10,
+                              item_page=page, _filters=flt, **extra)
                 break
             except TypeError:
                 continue
@@ -225,20 +369,15 @@ def amazon_search_ranked(tag, keywords, search_index="All", pages=2):
             disc = _g(lst, "price.savings.percentage")
             if disc is None and old and old > price:
                 disc = round((1 - price / old) * 100)
-            p = {
+            out.append({
                 "asin": it.asin, "title": title, "position": pos,
                 "url": getattr(it, "detail_page_url", None) or amazon_link(it.asin, tag),
                 "image": _g(it, "images.primary.large.url") or "",
                 "brand": _g(it, "item_info.by_line_info.brand.display_value") or "",
                 "price": float(price), "old_price": float(old) if old else None,
                 "discount": int(disc) if disc else None,
-                "rating": _num_or_none(_g(it, "customer_reviews.star_rating.value")),
-                "reviews": _num_or_none(_g(it, "customer_reviews.count")),
                 "sales_rank": _num_or_none(_g(it, "browse_node_info.website_sales_rank.sales_rank")),
-            }
-            if not rating_ok(p):                     # stessa soglia delle offerte (es. 4 stelle)
-                continue
-            out.append(p)
+            })
         time.sleep(1.1)
     return out
 
@@ -287,9 +426,7 @@ def _parse_amazon_item(it, niche_id, tag):
                   title=title, url=url, preview_url=url,
                   image=_g(it, "images.primary.large.url") or "", price=float(price),
                   old_price=float(old) if old else None, discount=int(disc) if disc else None,
-                  brand=brand, price_date=today_label(),
-                  rating=_num_or_none(_g(it, "customer_reviews.star_rating.value")),
-                  reviews=_num_or_none(_g(it, "customer_reviews.count")))
+                  brand=brand, price_date=today_label())
 
 
 # --------------------------------------------------------------------------- Lista prodotti (CSV)

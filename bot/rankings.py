@@ -5,13 +5,13 @@ Classifiche automatiche e aggiornamento prezzi del sito (solo con la Creators AP
  - data/prices.json      : prezzi aggiornati dei prodotti mostrati sul sito
 
 Come viene scelto un prodotto per la classifica:
- 1. ricerca Amazon con le parole "amazon:" della classifica (2 pagine, 20 risultati);
+ 1. ricerca Amazon con le parole "amazon:" della classifica, nella categoria Amazon.it adatta,
+    solo prodotti da MIN_RATING stelle in su (filtro di Amazon), ordinati per valutazioni medie;
  2. scarta prodotti fuori fascia di prezzo, ricambi/accessori e titoli con le parole "escludi:";
- 3. punteggio = valutazione media pesata sul numero di recensioni (pochi voti contano meno)
-    + bonus posizione nelle vendite Amazon + bonus posizione nei risultati;
+ 3. punteggio = posizione nei risultati (ordinati per valutazioni) + bonus posizione nelle vendite;
  4. massimo 2 prodotti dello stesso marchio, poi i primi RANK_SIZE.
-Se l'API non fornisce valutazioni o recensioni, conta l'ordine di Amazon e la posizione vendite.
-Le valutazioni servono solo a ordinare: sul sito non vengono mostrate.
+La Creators API non restituisce stelle né numero di recensioni: il filtro e l'ordinamento per
+valutazioni li fa Amazon nella ricerca.
 """
 import json
 import math
@@ -38,19 +38,12 @@ def save(path, obj):
         json.dump(obj, f, ensure_ascii=False, indent=1)
 
 
-def _score(p, prior=4.0, m=50):
-    r, n = p.get("rating"), p.get("reviews")
-    if r is not None and n is not None:
-        base = (n / (n + m)) * r + (m / (n + m)) * prior
-    elif r is not None:
-        base = (r + prior) / 2
-    else:
-        base = prior
+def _score(p):
+    s = 1 - min(p.get("position", 20), 20) / 20                 # 1 = primo risultato
     rank = p.get("sales_rank")
     if rank and rank > 0:
-        base += 0.4 * (1 - min(math.log10(rank), 6) / 6)
-    base += 0.3 * (1 - min(p.get("position", 20), 20) / 20)
-    return round(base, 4)
+        s += 0.6 * (1 - min(math.log10(rank), 6) / 6)          # più venduto = bonus più alto
+    return round(s, 4)
 
 
 def _auto_rankings():
@@ -74,9 +67,8 @@ def update(tag, now=None):
             todo.append((upd, a))
     todo.sort(key=lambda x: x[0])
     for _, a in todo[:getattr(config, "RANKS_PER_RUN", 1)]:
-        niche = config.NICHES.get(a["niche"], {})
         query = a.get("amazon") or (a["search"][0] if a["search"] else a["title"])
-        found = sources.amazon_search_ranked(tag, query, niche.get("amazon_search_index", "All"))
+        found = sources.amazon_search_ranked(tag, query, a["niche"])
         ok = []
         for p in found:
             if a.get("min_price") and p["price"] < a["min_price"]:
@@ -87,8 +79,6 @@ def update(tag, now=None):
             if any(w in t for w in a.get("exclude", [])):
                 continue
             if a.get("search") and not any(w in t for w in a["search"]):
-                continue
-            if p.get("reviews") is not None and p["reviews"] < 20:
                 continue
             if not is_real_product({"niche": a["niche"], "title": p["title"], "price": p["price"],
                                     "origin": "api"}):

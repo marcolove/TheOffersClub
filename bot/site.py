@@ -47,6 +47,10 @@ e = html.escape
 ROME = ZoneInfo("Europe/Rome")
 MIN_WORDS_INDEX = 250          # pagine editoriali più corte (e senza prodotti) restano noindex
 
+# Correzioni automatiche dei testi delle classifiche già scritte: la Creators API non fornisce
+# il numero di recensioni, quindi non lo citiamo tra i criteri.
+TEXT_FIXES = [(", al numero di recensioni", "")]
+
 
 # ------------------------------------------------------------------ utilità
 def eur(x):
@@ -106,6 +110,11 @@ def fmt_when(iso):
         return datetime.fromisoformat(iso).astimezone(ROME).strftime("%d/%m alle %H:%M")
     except (TypeError, ValueError):
         return ""
+
+
+def stars_txt():
+    r = getattr(config, "MIN_RATING", 0) or 0
+    return f"{int(r)} stelle" if r else ""
 
 
 class Prices:
@@ -226,6 +235,8 @@ def load_articles(kind, tag=""):
         if not fn.endswith(".md") or fn.startswith("_"):
             continue
         raw = open(os.path.join(folder, fn), encoding="utf-8").read()
+        for old, new in TEXT_FIXES:
+            raw = raw.replace(old, new)
         meta, body = parse_md(raw)
         if meta.get("bozza", "").lower() in ("si", "sì", "true", "1"):
             continue
@@ -508,6 +519,7 @@ def build(history, site_url, tag=""):
                      crumbs=[("Home", ""), (n["name"], n["slug"] + "/")]))
 
     # ---------------- Classifiche e guide
+    stars = stars_txt()
     for a in arts:
         n = config.NICHES.get(a["niche"])
         color = n["color"] if n else config.HUB["color"]
@@ -546,8 +558,9 @@ def build(history, site_url, tag=""):
         plist = ""
         if rows:
             upd = fmt_when(a.get("auto_updated")) if a.get("auto_items") else ""
-            note = (f'<p class="muted small">Classifica aggiornata il {upd} in base a valutazioni, numero di recensioni, '
-                    f'vendite e prezzo su Amazon.</p>') if upd else ""
+            crit = f"prodotti da {stars} in su, " if stars else ""
+            note = (f'<p class="muted small">Classifica aggiornata il {upd}: {crit}ordinati per valutazioni '
+                    f'dei clienti e vendite su Amazon, nella fascia di prezzo indicata.</p>') if upd else ""
             plist = f'<section><h2>La classifica</h2>{note}<ol class="rank">{"".join(rows)}</ol></section>'
         elif a["kind"] == "classifiche":
             plist = ('<section class="soon"><h2>La classifica</h2><p>I prodotti della classifica vengono '
@@ -591,13 +604,9 @@ def build(history, site_url, tag=""):
                      crumbs=[("Home", ""), (label, kind + "/")], index=bool(lst), intro=top_html))
 
     # ---------------- Come funziona
-    min_r = getattr(config, "MIN_RATING", 0) or 0
-    min_n = getattr(config, "MIN_REVIEWS", 0) or 0
-    rating_li = ""
-    if min_r or min_n:
-        r_txt = f"valutazione media di almeno <strong>{str(min_r).replace('.', ',')} stelle</strong>" if min_r else ""
-        n_txt = f"almeno <strong>{min_n} recensioni</strong>" if min_n else ""
-        rating_li = f"<li>Le offerte trovate in automatico devono avere {' e '.join(x for x in (r_txt, n_txt) if x)} su Amazon.</li>"
+    rating_li = (f"<li>Le offerte trovate in automatico hanno una valutazione media di almeno "
+                 f"<strong>{stars}</strong> su Amazon.</li>") if stars else ""
+    rank_crit = f"tra i prodotti da {stars} in su, " if stars else ""
     how_intro = ('<header class="post-h"><h1>Come selezioniamo le offerte</h1>'
                  '<p class="lead">Criteri, automazione e affiliazione, spiegati in modo trasparente.</p></header>')
     how = f"""<article class="post"><div class="prose">
@@ -609,7 +618,7 @@ def build(history, site_url, tag=""):
 <li>Lo stesso prodotto non viene ripubblicato prima di {config.REPOST_AFTER_DAYS} giorni.</li>
 <li>Sul sito un prezzo compare solo se è stato rilevato nelle ultime {config.PRICE_MAX_AGE_HOURS} ore, con data e ora del controllo.</li>
 <li>Quando un'offerta finisce, lo segnaliamo sul post.</li></ul>
-<h2>Le classifiche</h2><p>Le classifiche si aggiornano in automatico: i prodotti vengono scelti tra quelli disponibili su Amazon in base alla valutazione media, al numero di recensioni (pochi voti contano meno), alle vendite e alla fascia di prezzo della classifica. Non includiamo ricambi né accessori, e al massimo due prodotti dello stesso marchio. I testi con i criteri di scelta sono scritti a mano.</p>
+<h2>Le classifiche</h2><p>Le classifiche si aggiornano in automatico ogni settimana: i prodotti vengono scelti {rank_crit}in base alle valutazioni dei clienti, alle vendite su Amazon e alla fascia di prezzo della classifica. Non includiamo ricambi né accessori, e al massimo due prodotti dello stesso marchio. I testi con i criteri di scelta sono scritti a mano.</p>
 <h2>Affiliazione</h2><p>{e(config.DISCLOSURE)} Per te il prezzo non cambia, e la posizione in classifica non dipende dalla commissione.</p></div></article>"""
     write(os.path.join(OUT, "come-funziona", "index.html"),
           s.page("come-funziona/", f"Come selezioniamo le offerte | {config.BRAND}",
