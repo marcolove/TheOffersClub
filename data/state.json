@@ -1,7 +1,8 @@
 {
  "posted": {
   "amz:B0F22BB4BV": "2026-11-18T15:41:39.230880+00:00",
-  "amz:B07R4CNDRM": "2026-11-28T15:24:41.973892+00:00"
+  "amz:B07R4CNDRM": "2026-11-28T15:24:41.973892+00:00",
+  "amz:B0BQCTF5BW": "2026-11-28T15:30:45.921048+00:00"
  },
  "hub_pin_id": 10,
  "live": {
@@ -18,6 +19,23 @@
      "id": 75,
      "kind": "photo",
      "text": "🍳 <b>American Crew Matte Clay cera per capelli uomo 85g</b>\n✅ Tenuta medio-alta e finish opaco\n\n👉 <a href=\"https://link.amazon/B03oaMwVv\">Apri su Amazon</a>\n\n🌐 Altre categorie? <a href=\"https://t.me/theoffersclub_hub\">Scopri tutti i canali tematici</a>\n\n<i>Link affiliato Amazon · verifica il prezzo sulla pagina</i>",
+     "markup": ""
+    }
+   ]
+  },
+  "amz:B0BQCTF5BW": {
+   "posted": "2026-11-28T15:30:45.921048+00:00",
+   "origin": "csv",
+   "asin": "B0BQCTF5BW",
+   "price": null,
+   "manual_price": false,
+   "image": "https://m.media-amazon.com/images/I/812cOp1R64L._AC_SL1000_.jpg",
+   "msgs": [
+    {
+     "chat": "@theoffersclub_casa",
+     "id": 76,
+     "kind": "photo",
+     "text": "Ve lo segnalo\n🪴 <b>American Crew Fiber</b>\n📌 Cera Capelli Uomo\n\n👉 <a href=\"https://link.amazon/B07j2LSxD\">Apri su Amazon</a>\n\n🧭 Ti interessano altri temi? <a href=\"https://t.me/theoffersclub_hub\">Trovi tutti i canali nell'Hub</a>\n\n<i>#affiliato · il prezzo può cambiare</i>",
      "markup": ""
     }
    ]

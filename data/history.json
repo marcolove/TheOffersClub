@@ -1,5 +1,24 @@
 [
  {
+  "key": "amz:B0BQCTF5BW",
+  "source": "curated",
+  "origin": "csv",
+  "asin": "B0BQCTF5BW",
+  "niche": "casa",
+  "title": "American Crew Fiber",
+  "url": "https://link.amazon/B07j2LSxD",
+  "image": "https://m.media-amazon.com/images/I/812cOp1R64L._AC_SL1000_.jpg",
+  "price": null,
+  "old_price": null,
+  "discount": null,
+  "note": "Cera Capelli Uomo",
+  "brand": "",
+  "manual_price": false,
+  "preview_url": "https://www.amazon.it/dp/B0BQCTF5BW?tag=theoffersclub-21",
+  "price_date": "",
+  "seen": "2026-11-28T15:30:45.921048+00:00"
+ },
+ {
   "key": "amz:B07R4CNDRM",
   "source": "curated",
   "origin": "csv",
