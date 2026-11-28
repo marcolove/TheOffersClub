@@ -1,7 +1,8 @@
 {
  "posted": {
   "amz:B07R4CNDRM": "2026-11-28T15:24:41.973892+00:00",
-  "amz:B0BQCTF5BW": "2026-11-28T15:30:45.921048+00:00"
+  "amz:B0BQCTF5BW": "2026-11-28T15:30:45.921048+00:00",
+  "amz:B0F22BB4BV": "2026-11-28T15:53:59.654591+00:00"
  },
  "hub_pin_id": 10,
  "live": {
@@ -35,6 +36,23 @@
      "id": 76,
      "kind": "photo",
      "text": "Ve lo segnalo\n🪴 <b>American Crew Fiber</b>\n📌 Cera Capelli Uomo\n\n👉 <a href=\"https://link.amazon/B07j2LSxD\">Apri su Amazon</a>\n\n🧭 Ti interessano altri temi? <a href=\"https://t.me/theoffersclub_hub\">Trovi tutti i canali nell'Hub</a>\n\n<i>#affiliato · il prezzo può cambiare</i>",
+     "markup": ""
+    }
+   ]
+  },
+  "amz:B0F22BB4BV": {
+   "posted": "2026-11-28T15:53:59.654591+00:00",
+   "origin": "csv",
+   "asin": "B0F22BB4BV",
+   "price": null,
+   "manual_price": false,
+   "image": "https://m.media-amazon.com/images/I/717jA4SIMqL._AC_SX522_.jpg",
+   "msgs": [
+    {
+     "chat": "@theoffersclub_casa",
+     "id": 78,
+     "kind": "photo",
+     "text": "🧺 <b>Breeze Men Dry Protection deodorante squeeze 6x100ml</b>\n⭐ Confezione da 6 per fare scorta\n\n🛒 <a href=\"https://link.amazon/B06GAAyxt\">Apri su Amazon</a>\n\n🌐 Altre categorie? <a href=\"https://t.me/theoffersclub_hub\">Scopri tutti i canali tematici</a>\n\n<i>#affiliato · il prezzo può cambiare</i>",
      "markup": ""
     }
    ]

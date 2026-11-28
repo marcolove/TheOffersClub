@@ -1,5 +1,24 @@
 [
  {
+  "key": "amz:B0F22BB4BV",
+  "source": "curated",
+  "origin": "csv",
+  "asin": "B0F22BB4BV",
+  "niche": "casa",
+  "title": "Breeze Men Dry Protection deodorante squeeze 6x100ml",
+  "url": "https://link.amazon/B06GAAyxt",
+  "image": "https://m.media-amazon.com/images/I/717jA4SIMqL._AC_SX522_.jpg",
+  "price": null,
+  "old_price": null,
+  "discount": null,
+  "note": "Confezione da 6 per fare scorta",
+  "brand": "",
+  "manual_price": false,
+  "preview_url": "https://www.amazon.it/dp/B0F22BB4BV?tag=theoffersclub-21",
+  "price_date": "",
+  "seen": "2026-11-28T15:53:59.654591+00:00"
+ },
+ {
   "key": "amz:B0BQCTF5BW",
   "source": "curated",
   "origin": "csv",
